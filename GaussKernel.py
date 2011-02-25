@@ -1,107 +1,122 @@
 import math
 import random
-import numpy
+from scipy import ndimage
+from scipy import numpy
 
 def sigmoid(x, beta, x0):
     return 1./ (1. + math.exp(-beta * (x - x0)))
 
-def gauss(x):
-    return 1. / sqrt(2. * PI) * exp(-1./2. * x**2)
+def convolve(input, kernel):
+    if kernel.is_separable() is True
+        convolution_result = copy(input)
+        for dimension_index in range(0, kernel.get_number_of_dimensions):
+            ndimage.convolve1d(convolution_result,
+                kernel.get_separated_kernel_parts(dimension_index),
+                axis=dimension_index,
+                output=convolution_result,
+                mode='wrap')
+    else
+        print "Error. For now, the convolution is only implemented for separable filters."
 
-def discrete_gauss(x, array_size):
-    gauss_array = zeros(array_size)
-
-    for i in range(array_size):
-        j = i - array_size / (array_size * 10)
-        gauss_array[i] = gauss(j)
-
-    return gauss_array
+    return convolution_result
 
 class KernelMode:
     "Mode of a kernel"
 
-    def __init__(self, amplitude, steepnesses, shift):
+    def __init__(self, amplitude, steepnesses, shifts):
         self._amplitude = amplitude 
         self._steepnesses = steepnesses
-        self._shift = shift
+        self._shifts = shifts
+        self._number_of_dimensions = len(steepnesses)
+        if len(shifts) != self._number_of_dimensions
+            print "Error. Kernel mode only supports ", len(self._steepnesses), "dimensions."
+            
         self._separated_kernel_parts = []
+        self._is_separable = False
+
+    def is_separable(self):
+        return self._is_separable
 
     def get_amplitude(self):
         return self._amplitude
 
     def get_steepness(self, dimension_index):
-        if not (dimension_index >= 0 and dimension_index < len(self._steepnesses)):
-            print "Error. Kernel mode only supports ", len(self._steepnesses), "dimensions."
+        self.check_dimension_index(dimension_index)
         return self._steepnesses[dimension_index]
 
-    def get_shift(self):
-        return self._shift
+    def get_shifts(self, dimension_index):
+        self.check_dimension_index(dimension_index)
+        return self._shifts[dimension_index]
 
-    def set_amplitude(self, amplitude):
+    def get_separated_kernel_part(self, dimension_index):
+        self.check_dimension_index(dimension_index)
+        return self._separated_kernel_parts[dimension_index]
+
+     def set_amplitude(self, amplitude):
         self._amplitude = amplitude
 
     def set_steepness(self, steepness, dimension_index):
-        if not (dimension_index >= 0 and dimension_index < len(self._steepnesses)):
-            print "Error. Kernel mode only supports ", len(self._steepnesses), "dimensions."
+        self.check_dimension_index(dimension_index)
         self._steepnesses[dimension_index] = steepness
 
-    def set_shift(self, shift):
-        self._shift = shift
+    def set_shifts(self, shift, dimension_index):
+        self.check_dimension_index(dimension_index)
+        self._shifts = shifts
+
+    def calculate_separated_kernel_parts(self):
+        self._is_separable = True
+
+        for dimension_index in range(0, number_of_dimensions):
+            kernel_width = compute_kernel_width(dimension_index)
+            self._dimension_sizes[dimension_index] = kernel_width
+
+            center_index = kernel_width / 2 + mode.get_shift(dimension_index) 
+            mode.set_center_index(center_index, dimension_index)
+
+            kernel_part = []
+            for size_index in range(0, kernel_width)
+                value = exp(-math.pow(size_index - center_index, 2.0) / (2.0 * math.pow(mode.get_steepness(dimension_index), 2.0)))
+                kernel_part.append(value)
+
+            # normalize kernel part
+            kernel_part *= (1. / sum(kernel_part))
+
+            self._separated_kernel_part[dimension_index] = kernel_part
+
+       
+    def check_dimension_index(self, dimension_index):
+        if not (dimension_index >= 0 and dimension_index < len(self._steepnesses)):
+            print "Error. Kernel mode only supports ", len(self._steepnesses), "dimensions."
+
 
 
 class GaussKernel:
     "n-dimensional Gauss kernel"
 
-    def __init__(self):
+    def __init__(self, number_of_dimensions):
         "Constructor"
 
         self._number_of_dimensions = number_of_dimensions
+        self._dimension_sizes = []
         self._modes = []
         self._limit = 0.01
-        self._dimension_sizes = []
 
     def add_mode(self, amplitude, steepnesses, shift):
         mode = KernelMode(amplitude, steepnesses, shift)
         self.add_mode(mode)
 
     def calculate(self):
+        for mode in self._modes:
 
         for mode in self._modes:
+            kernel_mode_buffer = numpy.eye(shape=self._dimension_sizes)
+
             for dimension_index in range(0, number_of_dimensions):
-                kernel_width = compute_kernel_width(dimension_index)
-                self._dimension_sizes[dimension_index] = kernel_width
+                kernel_mode_buffer = kernel_mode_buffer * 
+                
+                kernel = mode.get_separated_kernel_part(
 
-                center_index = kernel_width / 2 + mode.get_shift(dimension_index)
-                self.separated_kernel_parts
 
-        mCenters.at(dim).at(mode) = mSizes.at(dim) / 2 + _mShifts.at(dim).at(mode);
-        mKernelParts.at(dim).at(mode) = cv::Mat::zeros(mSizes.at(dim), 1, CV_32FC1);
-        if (dim == 1)
-        {
-          // just need transposed parts of second dimension
-          mKernelPartsTransposed.at(mode) = cv::Mat(1,mSizes.at(1), CV_32FC1);
-        }
-        // calculate kernel part
-        if (_mSigmas.at(dim).at(mode) != 0)
-        {
-          for (int j = 0; j < mSizes.at(dim); j++)
-          {
-            mKernelParts.at(dim).at(mode).at<float>(j, 0)
-                = exp(-powf(j - mCenters.at(dim).at(mode), 2) / (2 * powf(_mSigmas.at(dim).at(mode), 2)));
-          }
-        }
-        else // discrete case
-        {
-          mKernelParts.at(0).at(mode).at<float>(0, 0) = 1;
-        }
-        // normalize
-        mKernelParts.at(dim).at(mode) = mKernelParts.at(dim).at(mode) * (1. / sum(mKernelParts.at(dim).at(mode)).val[0]);
-        if(dim == 0)
-        {
-          mKernelParts.at(dim).at(mode) = _mAmplitudes.at(mode) * mKernelParts.at(dim).at(mode);
-        }
-      }
-    }
     // assemble the kernel
     mKernel = cv::Mat::zeros(mKernelParts.at(0).at(0).rows, mKernelParts.at(1).at(0).rows, CV_32FC1);
     for (unsigned int mode = 0; mode < _mNumModes; mode++)

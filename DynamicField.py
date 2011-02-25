@@ -1,21 +1,11 @@
 import math
 import random
-import numpy
+import GaussKernel
+from scipy import ndimage
+from scipy import numpy
 
 def sigmoid(x, beta, x0):
     return 1./ (1. + math.exp(-beta * (x - x0)))
-
-def gauss(x):
-    return 1. / sqrt(2. * PI) * exp(-1./2. * x**2)
-
-def discrete_gauss(x, array_size):
-    gauss_array = zeros(array_size)
-
-    for i in range(array_size):
-        j = i - array_size / (array_size * 10)
-        gauss_array[i] = gauss(j)
-
-    return gauss_array
 
 
 class DynamicField:
@@ -31,16 +21,15 @@ class DynamicField:
         self._name = str('')
 
         # dimensionality of the field
-        # TODO check that dimensionality is correct ( 0 <= dim <= 3 )
-        self._dimensionality = dimensionality
+        self._dimensionality = len(dimension_sizes)
 
         # unique id of the field
         self._id = unique_id
          
         # amount of self excitation of the system
-        self._lateral_interaction = numpy.zeros(dimension_sizes) # TODO: convert to tensor
-        for 
-
+        self._lateral_interaction = numpy.zeros(shape=dimension_sizes)
+        # convolution kernel used to generate lateral interaction
+        self._lateral_interaction_kernel = numpy.zeros(shape=dimension_sizes)
 
         # noise strength of the system
         self._noise_strength = 0.05
@@ -51,7 +40,7 @@ class DynamicField:
         self._boost = 0.0
         # current value of the system (initialize it with the resting level,
         # because the field would relax to it without external input anyway)
-        self._activation = numpy.zeros(dimension_sizes) + self._resting_level
+        self._activation = numpy.zeros(shape=dimension_sizes) + self._resting_level
         # controls how fast the system relaxes
         self._relaxation_time = 20.0
         # controls the steepness of the sigmoid (nonlinearity) at the zero
@@ -59,10 +48,10 @@ class DynamicField:
         self._sigmoid_steepness = 5.0
         # controls the shift of the nonlinearity on the x-axis (sigmoid)
         self._sigmoid_shift = 0.0
-        # list of connectors that come into the field
-        self._incident_connectors = []
-        # list of connectors that go out from the field
-        self._adjacent_connectors = []
+        # list of connectors that come into the field (incident connectors)
+        self._incoming_connectors = []
+        # list of connectors that go out from the field (adjacent connectors)
+        self._outgoing_connectors = []
 
 
     def get_name(self):
@@ -85,6 +74,12 @@ class DynamicField:
 
     def set_lateral_interaction(self, lateral_interaction):
         self._lateral_interaction = lateral_interaction
+
+    def get_lateral_interaction_kernel(self):
+        return self._lateral_interaction
+
+    def set_lateral_interaction_kernel(self, lateral_interaction_kernel):
+        self._lateral_interaction_kernel = lateral_interaction_kernel
 
     def get_noise_strength(self):
         return self._noise_strength
@@ -125,11 +120,11 @@ class DynamicField:
     def set_sigmoid_shift(self, shift):
         self._sigmoid_shift = shift
 
-    def get_incident_connectors(self):
-        return self._incident_connectors
+    def get_incoming_connectors(self):
+        return self._incoming_connectors
 
-    def get_adjacent_connectors(self):
-        return self._adjacent_connectors
+    def get_outgoing_connectors(self):
+        return self._outgoing_connectors
 
     def get_output(self, activation=None):
         """Compute the output of the field. By default, the current value of the
@@ -160,16 +155,19 @@ class DynamicField:
             # ..otherwise, set the factor to one
             relaxation_time_factor = 1.
 
+        # compute the lateral interaction
+        GaussKernel.convolve(self.get_output(activation, self._lateral_interaction_kernel, output=self._lateral_interaction)
+
         # sum up the input coming in from all connected fields
         field_interaction = 0
-        for connector in self._incident_connectors:
+        for connector in self._incoming_connectors:
             field_interaction += connector.get_output()
 
         # compute the change of the system
         change = time_scale_factor * (- activation
                      + self._resting_level
                      + self._boost
-                     + numpy.convolve(self._lateral_interaction, self.get_output(activation), mode='same')
+                     + self._lateral_interaction
                      + field_interaction)
 
         return change
@@ -177,7 +175,7 @@ class DynamicField:
     def step(self):
         """Compute the current change of the system and change to current value
         accordingly."""
-        self._activation += self.get_change(self._activation) + self._noise * (random.random() - 0.5)
+        self._activation += self.get_change(self._activation) + self._noise_strength * (random.random() - 0.5)
 
 
 class Connector:
