@@ -1,0 +1,8 @@
+syntax: glob
+*.png
+*.pyc
+*.swp
+*.log
+*~
+.eric4project
+.ropeproject

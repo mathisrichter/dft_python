@@ -2,34 +2,39 @@ import math
 import random
 import GaussKernel
 from scipy import ndimage
-from scipy import numpy
+import numpy
 
 def sigmoid(x, beta, x0):
-    return 1./ (1. + math.exp(-beta * (x - x0)))
+    return 1./ (1. + numpy.exp(-beta * (x - x0)))
 
 
 class DynamicField:
     "Dynamic field"
 
-    def __init__(self, dimension_sizes, unique_id):
+    _instance_counter = 0
+
+    def __init__(self, dimension_sizes, interaction_kernel=None):
         "Constructor"
 
         # seed the random number generator to have pseudo-random noise
         random.seed()
+
+        # increase the instance counter of the DynamicField class
+        DynamicField._instance_counter += 1
+
+        # unique id of the field instance
+        self._id = DynamicField._instance_counter
         
         # name of the field
         self._name = str('')
 
         # dimensionality of the field
         self._dimensionality = len(dimension_sizes)
-
-        # unique id of the field
-        self._id = unique_id
          
         # amount of self excitation of the system
         self._lateral_interaction = numpy.zeros(shape=dimension_sizes)
         # convolution kernel used to generate lateral interaction
-        self._lateral_interaction_kernel = numpy.zeros(shape=dimension_sizes)
+        self._lateral_interaction_kernel = interaction_kernel
 
         # noise strength of the system
         self._noise_strength = 0.05
@@ -41,6 +46,7 @@ class DynamicField:
         # current value of the system (initialize it with the resting level,
         # because the field would relax to it without external input anyway)
         self._activation = numpy.zeros(shape=dimension_sizes) + self._resting_level
+
         # controls how fast the system relaxes
         self._relaxation_time = 20.0
         # controls the steepness of the sigmoid (nonlinearity) at the zero
@@ -156,19 +162,22 @@ class DynamicField:
             relaxation_time_factor = 1.
 
         # compute the lateral interaction
-        GaussKernel.convolve(self.get_output(activation, self._lateral_interaction_kernel, output=self._lateral_interaction)
+        if self._lateral_interaction_kernel is not None:
+            self._lateral_interaction = GaussKernel.convolve(self.get_output(activation), self._lateral_interaction_kernel)
 
         # sum up the input coming in from all connected fields
-        field_interaction = 0
+        field_interaction = 10
         for connector in self._incoming_connectors:
             field_interaction += connector.get_output()
 
         # compute the change of the system
-        change = time_scale_factor * (- activation
+        change = relaxation_time_factor * (- activation
                      + self._resting_level
                      + self._boost
                      + self._lateral_interaction
                      + field_interaction)
+
+        print('change: ', change)
 
         return change
     
