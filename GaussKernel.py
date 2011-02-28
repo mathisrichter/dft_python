@@ -9,7 +9,7 @@ def sigmoid(x, beta, x0):
 
 def convolve(input, kernel):
     convolution_result = copy.copy(input)
-    for dimension_index in range(0, kernel.get_dimensionality() - 1):
+    for dimension_index in xrange(kernel.get_dimensionality()):
         ndimage.convolve1d(convolution_result, kernel.get_separated_kernel_parts(dimension_index), axis=dimension_index, output=convolution_result, mode='wrap')
 
     return convolution_result
@@ -58,15 +58,15 @@ class KernelMode:
     def calculate_separated_kernel_parts(self):
         del(self._separated_kernel_parts[:])
 
-        for dimension_index in range(0, self._kernel.get_dimensionality() - 1):
+        for dimension_index in xrange(self._kernel.get_dimensionality()):
             kernel_width = self._kernel.get_dimension_size(dimension_index)
 
             center_index = math.floor(kernel_width / 2) + round(self._shifts[dimension_index])
-#            mode.set_center_index(center_index, dimension_index)
 
             kernel_part = numpy.zeros(shape=kernel_width)
-            for size_index in range(0, kernel_part.size - 1):
-                kernel_part[size_index] = math.exp(-math.pow(size_index - center_index, 2.0) / (2.0 * math.pow(self._steepnesses[dimension_index], 2.0)))
+            for size_index in xrange(kernel_part.size):
+                kernel_part[size_index] = math.exp(-math.pow(size_index - center_index, 2.0) /       \
+                                          (2.0 * math.pow(self._steepnesses[dimension_index], 2.0)))
 
             # normalize kernel part
             kernel_part *= (1. / sum(kernel_part))
@@ -100,7 +100,7 @@ class GaussKernel:
         del self._dimension_sizes[:]
         del self._separated_kernel_parts[:]
 
-        for dimension_index in range(0, self._dimensionality-1):
+        for dimension_index in xrange(self._dimensionality):
             dimension_size = self.compute_dimension_size(dimension_index)
             self._dimension_sizes.append(dimension_size)
             self._separated_kernel_parts.append(numpy.zeros(shape=dimension_size))
@@ -108,7 +108,7 @@ class GaussKernel:
         for mode in self._modes:
             mode.calculate_separated_kernel_parts()
 
-            for dimension_index in range(0, self._dimensionality-1):
+            for dimension_index in xrange(self._dimensionality):
                 self._separated_kernel_parts[dimension_index] += mode.get_separated_kernel_part(dimension_index)
 
 #                kernel_mode_buffer = kernel_mode_buffer * 
