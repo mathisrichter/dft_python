@@ -287,9 +287,15 @@ class ProcessingGroup(Connectable):
 
     def connect_group(self):
         number_of_steps = len(self._processing_steps)
+
+        if number_of_steps > 0:
+            connect(self, self._processing_steps[0])
+            connect(self._processing_steps[-1], self)
+
         for step_index in xrange(number_of_steps):
             if step_index + 1 < number_of_steps:
                 connect(self._processing_steps[step_index], self._processing_steps[step_index + 1])
+
     
     def disconnect_group(self):
         number_of_steps = len(self._processing_steps)
