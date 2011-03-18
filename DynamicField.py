@@ -1,36 +1,142 @@
 import math
 import random
-import GaussKernel
+import Kernel
 from scipy import ndimage
 import numpy
 
 def sigmoid(x, beta, x0):
     return 1./ (1. + numpy.exp(-beta * (x - x0)))
 
+class ConnectError(Exception):
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return repr(self.value)
 
-def connect(source, target):
+def connect(source, target, processing_steps):
+    # get dimensionality and dimension sizes of source
     source_output_dimensionality = source.get_output_dimensionality()
+    source_output_dimension_sizes = source.get_output_dimension_sizes()
+    
+    # get dimensionality and dimension sizes of target
     target_input_dimensionality = target.get_input_dimensionality()
+    target_input_dimension_sizes = target.get_input_dimension_sizes()
 
-    if source_output_dimensionality != None and target_input_dimensionality != None:
-        if source_output_dimensionality != target_input_dimensionality:
-            print 'Error. Source and target cannot be connected due to mismatching dimensionality of output and input.'
+    # check if the dimensionality and dimension sizes of the source and the target are known
+    if source_output_dimensionality is None:
+        raise ConnectError("Source dimensionality is unknown. Cannot set up architecture without this information.")
+    if source_output_dimension_sizes is None:
+        raise ConnectError("Source dimension sizes are unknown. Cannot set up architecture without this information.")
+    if target_output_dimensionality is None:
+        raise ConnectError("Target dimensionality is unknown. Cannot set up architecture without this information.")
+    if target_output_dimension_sizes is None:
+        raise ConnectError("Target dimension sizes are unknown. Cannot set up architecture without this information.")
+
+    # get the indeces of scaler and projection processing steps
+    projection_indeces = []
+    scaler_indeces = []
+    for i in xrange(len(processing_steps)):
+        if (processing_steps[i].is_instance_of(Scaling)):
+            scaler_indeces.append(i)
+        if (processing_steps[i].is_instance_of(Projection)):
+            projection_indeces.append(i)
+    
+    # print error if there is more than one scaler in the processing steps
+    if (len(scaler_indeces) > 1):
+        raise ConnectError("You want to connect more than one scaler between source and target. This is not supported.")
+
+    # if there is no projection processing step ..
+    if (len(projection_indeces) < 1):
+        # .. check if the dimensionalities of source and target agree. if they don't match ..
+        if (source_output_dimensionality != target_input_dimensionality):
+            # throw an error, because in this case you need a projection processing step.
+            raise ConnectError("""You need a projection processing step to connect source and target,
+                               because they are of different dimensionality.""")
+        else:
+            if (source_output_dimension_sizes != target_input_dimension_sizes):
+                if len(scaler_indeces < 1):
+                    raise ConnectError("""You need a scaler processing step to connect source and target,
+                                       because they differ in the size of at least one dimension.""")
+                else:
+                    scaler = processing_steps[scaler_indeces[0]]
+                    scaler.set_input_dimension_sizes(source_output_dimension_sizes)
+                    scaler.set_output_dimension_sizes(target_input_dimension_sizes)
+    else:
+        projections = [source]
+        for index in projection_indeces:
+            projections.append(processing_steps[index])
+        projections.append(target)
+
+        for i in xrange(len(projections)):
+            if (i + 1 < len(projections)):
+                if (projections[i].get_output_dimensionality() != projections[i+1].get_input_dimensionality):
+                    raise ConnectError("The dimensionalities of the connectables ",
+                                        projections[i].get_name(), " and ", projections[i+1].get_name(),
+                                        " do not match.")
 
 
+        projection = processing_steps[projection_indeces[0]]
+        projection.set_input_dimensionality(source_output_dimensionality)
+        projection.set_output_dimensionality(target_input_dimensionality)
+
+        if (source_output_dimensionality == target_input_dimensionality):
+
+
+
+        scaler_index = scaler_indeces[0]
+        projection_index = projection_indeces[0]
+
+        if (scaler_index > projection_index):
+            
+    
+
+
+        
+        
+
+    processing_steps[i].set_input_dimensionality(source_output_dimensionality)
+    processing_steps[i].set_input_dimension_sizes(source_output_dimension_sizes)
+    processing_steps[i].set_output_dimensionality(target_input_dimensionality)
+    processing_steps[i].set_output_dimension_sizes(target_input_dimension_sizes)
+
+
+    
+    # if a projection is needed between source and target ..
+    if (source_output_dimensionality != target_input_dimensionality):
+        # .. check if there is exactly one projection in the processing steps and set up
+        # its dimensionality and dimension sizes for input and output
+
+        
+
+    
+    # put source, target, and all processing steps in a single list
+    connectables = processing_steps
+    connectables.insert(0, source)
+    connectables.append(target)
+    
+    for i in xrange(len(connectables)):
+        
+        
+        
+        # connect source and target
+        source.get_outgoing_connectables().append(target)
+        target.get_incoming_connectables().append(source)
+
+
+
+
+    # check if source and target dimension sizes match
     source_output_dimension_sizes = source.get_output_dimension_sizes()
     target_input_dimension_sizes = target.get_input_dimensionality()
 
-    if source_output_dimension_sizes != None and target_input_dimension_sizes != None:
-        for output_size, input_size in source_output_dimension_sizes, target_intput_dimension_sizes:
-            if output_size != input_size:
-                print 'Error. Source and target cannot be connected due to mismatching size of at least one dimension.'
+    for output_size, input_size in source_output_dimension_sizes, target_intput_dimension_sizes:
+        if output_size != input_size:
+            raise ConnectError("Source and target cannot be connected due to mismatching size of at least one dimension.")
 
-    source.get_adjacent_connectables().append(target)
-    target.get_incident_connectables().append(source)
 
 def disconnect(source, target):
-    source.get_adjacent_connectables().remove(target)
-    target.get_incident_connectables().remove(source)
+    source.get_outgoing_connectables().remove(target)
+    target.get_incoming_connectables().remove(source)
 
 
 
@@ -38,33 +144,54 @@ class Connectable:
     "Object that can be connected to other connectable objects via connections."
 
     def __init__(self):
-        # list of connected objects that produce input for this connectable (incident)
-        self._incident_connectables = []
-        # list of connected objects that receive input from this connectable (adjacent)
-        self._adjacent_connectables = []
-        # the buffer for the output
-        self._output_buffer = None
+        # list of connected objects that produce input for this connectable (incoming)
+        self._incoming_connectables = []
+        # list of connected objects that receive input from this connectable (outgoing)
+        self._outgoing_connectables = []
+        # the buffers for the output
+        self._output_buffers = []
+        
+        # dimensionality of the input
+        self._input_dimensionality = None
+        # dimensionality of the output
+        self._output_dimensionality = None
+        # dimension sizes of the input
+        self._input_dimension_sizes = None
+        # dimension sizes of the output
+        self._output_dimension_sizes = None  
 
-    def get_incident_connectables(self):
-        return self._incident_connectables
+    def get_incoming_connectables(self):
+        return self._incoming_connectables
 
-    def get_adjacent_connectables(self):
-        return self._adjacent_connectables
+    def get_outgoing_connectables(self):
+        return self._outgoing_connectables
 
     def get_output(self):
         return self._output_buffer
 
     def get_input_dimensionality(self):
-        pass
+        return self._input_dimensionality
 
     def get_output_dimensionality(self):
-        pass
+        return self._output_dimensionality
 
     def get_input_dimension_sizes(self):
-        pass
+        return self._input_dimension_sizes
 
     def get_output_dimension_sizes(self):
-        pass
+        return self._output_dimension_sizes
+    
+    def set_input_dimensionality(self, dimensionality):
+        self._input_dimensionality = dimensionality
+
+    def set_output_dimensionality(self, dimensionality):
+        self._output_dimensionality = dimensionality
+
+    def set_input_dimension_sizes(self, dimension_sizes):
+        self._input_dimension_sizes = dimension_sizes
+
+    def set_output_dimension_sizes(self, dimension_sizes):
+        self._output_dimension_sizes = dimension_sizes
 
 
 class DynamicField(Connectable):
@@ -89,10 +216,12 @@ class DynamicField(Connectable):
         self._name = str('')
 
         # dimensionality of the field
-        self._dimensionality = len(dimension_sizes)
+        self._input_dimensionality = len(dimension_sizes)
+        self._output_dimensionality = self._input_dimensionality
 
-        # sizes in each dimension
-        self._dimension_sizes = dimension_sizes
+        # sizes in each dimension (in fields, input and output have the same dimensionality)
+        self._input_dimension_sizes = dimension_sizes
+        self._output_dimension_sizes = dimension_sizes
          
         # amount of self excitation of the system
         self._lateral_interaction = numpy.zeros(shape=dimension_sizes)
@@ -131,22 +260,7 @@ class DynamicField(Connectable):
         self._name = name
 
     def get_dimensionality(self):
-        return self._dimensionality
-
-    def get_output_dimensionality(self):
-        return self.get_dimensionality()
-
-    def get_input_dimensionality(self):
-        return self.get_dimensionality()
-
-    def get_dimension_sizes(self):
-        return self._dimension_sizes
-
-    def get_input_dimension_sizes(self):
-        return self.get_dimension_sizes()
-
-    def get_output_dimension_sizes(self):
-        return self.get_dimension_sizes()
+        return self._output_dimensionality
 
     def get_id(self):
         return self._id
@@ -158,7 +272,7 @@ class DynamicField(Connectable):
         self._lateral_interaction = lateral_interaction
 
     def get_lateral_interaction_kernel(self):
-        return self._lateral_interaction
+        return self._lateral_interaction_kernel
 
     def set_lateral_interaction_kernel(self, lateral_interaction_kernel):
         self._lateral_interaction_kernel = lateral_interaction_kernel
@@ -233,11 +347,11 @@ class DynamicField(Connectable):
 
         # compute the lateral interaction
         if self._lateral_interaction_kernel is not None:
-            self._lateral_interaction = GaussKernel.convolve(self.get_output(activation), self._lateral_interaction_kernel)
+            self._lateral_interaction = Kernel.convolve(self.get_output(activation), self._lateral_interaction_kernel)
 
         # sum up the input coming in from all connected fields
         field_interaction = 0
-        for connectable in self.get_incident_connectables():
+        for connectable in self.get_incoming_connectables():
             field_interaction += connectable.get_output()
 
         # compute the change of the system
@@ -318,12 +432,92 @@ class ProcessingStep(Connectable):
         pass
 
 
-class WeightProcessingStep(ProcessingStep):
-    "The (single) input is multiplied with a weight."
+class Weight(ProcessingStep):
+    "Each input is multiplied with a weight and stored in the corresponding output buffer."
 
     def __init__(self, weight):
         ProcessingStep.__init__(self)
         self._weight = weight
 
     def step(self):
-        self._output_buffer = self._incident_connectables[0].get_output() * self._weight
+        for i in xrange(len(self._output_buffers)):
+            self._output_buffers[i] = self._incoming_connectables[i].get_output() * self._weight
+    
+    def get_weight(self):
+        return self._weight
+    
+    def set_weight(self, weight):
+        self._weight = weight
+
+class Scaling(ProcessingStep):
+    """The input is somehow mapped onto an output with different dimension sizes but the same dimensionality.
+    This can be done by interpolation, cropping, or padding."""
+
+    def __init__(self, weight):
+        ProcessingStep.__init__(self)
+
+    def step(self):
+        pass
+
+
+class Projection(ProcessingStep):
+    "Projection of an input onto an output of a different dimensionality."
+    
+    def __init__(self, input_dimensionality, output_dimensionality, input_dimensions=set(), output_dimensions=None):
+        self._input_dimensionality = input_dimensionality
+        self._output_dimensionality = output_dimensionality
+        self._input_dimensions = input_dimensions
+        self._output_dimensions = output_dimensions
+                
+        if (len(self._input_dimensions) > self._input_dimensionality):
+            raise ConnectError("Number of input dimensions is larger than the dimensionality of the input.")
+        
+        if (len(self._output_dimensions) > self._output_dimensionality):
+            raise ConnectError("Number of output dimensions is larger than the dimensionality of the output.")
+
+        if (len(self._input_dimensions) != len(self._output_dimensions)):
+            raise ConnectError("Number of input dimensions should always be equal to the number of output dimensions.")
+        
+        if (self._input_dimensionality == self._output_dimensionality):
+            if (self._input_dimensions == self._output_dimensions):
+                print """Warning. You have created a projection processing step that neither changes the dimensionality,
+                       nor reorders the dimension indices and thus does nothing but waste processing power. :)"""
+
+        # get a set (unordered) of dimensions, which will be compressed (i.e., projected onto the remaining dimensions).
+        # if no input dimensions are given, then the whole input will be compressed to a scalar.
+        self._dimensions_to_compress = set(range(input_dimensionality)).difference(set(input_dimensions))
+        # get a set (unordered) of dimensions, which will be expanded (i.e., the remaining dimensions will be copied into them)
+        self._dimensions_to_expand = set(range(output_dimensionality)).difference(set(output_dimensions))
+
+        if (len(self._dimensions_to_compress) > 0 and len(self._dimensions_to_expand) > 0):
+            raise ConnectError("""The projection is set up to both compress the input and expand it afterwards.
+                               This is not supported. Please use two separate projection processing steps to
+                               achieve the same effect.""")
+        
+
+    def step(self):
+        input = self._incoming_connectables[i].get_output()
+
+        for i in xrange(len(self._dimensions_to_compress)):
+            input = input.max(self._dimensions_to_compress[i] - i)
+            
+        
+        number_of_input_dimensions = len(self._input_dimensions)
+        number_of_output_dimensions = len(self._output_dimensions)
+        
+        if (number_of_input_dimensions == number_of_output_dimensions):
+            self._output_buffers[0] = input.transpose(self.output_dimensions)
+        elif (number_of_input_dimensions < number_of_output_dimensions):
+            size_of_new_dimensions = len(input[0]) # TODO weird hack, talk to Yulia about it
+            output_array_shape = (size_of_new_dimensions,) * number_of_output_dimensions 
+            output = zeros(shape=output_array_shape)
+            
+            
+        else:
+            for dimension in self._output_dimensions: 
+                input = numpy.cumsum(input, axis=dimension)[-1]
+         
+
+
+    
+    

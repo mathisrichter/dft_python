@@ -10,20 +10,14 @@ def main():
     field0 = DynamicField.DynamicField([5], interaction_kernel)
     field1 = DynamicField.DynamicField([5], interaction_kernel)
 
-    weight0 = DynamicField.WeightProcessingStep([-1.0, -0.2, 5.0, -0.2, -1.0])
-    weight1 = DynamicField.WeightProcessingStep([-1.0, -0.2, 5.0, -0.2, -1.0])
+    weight = DynamicField.WeightProcessingStep([-1.0, -0.2, 5.0, -0.2, -1.0])
 
-    weight_group = DynamicField.ProcessingGroup()
-    weight_group.add_processing_step(weight0)
-    weight_group.add_processing_step(weight1)
-
-    DynamicField.connect(field0, weight_group)
-    DynamicField.connect(weight_group, field1)
-    weight_group.connect_group()
+    DynamicField.connect(field0, weight)
+    DynamicField.connect(weight, field1)
 
     for i in range(0, 500):
         field0.step()
-        weight_group.step()
+        weight.step()
         field1.step()
         if i == 150:
            field0.set_boost(5) 
