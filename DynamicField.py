@@ -3,6 +3,7 @@ import random
 import Kernel
 from scipy import ndimage
 import numpy
+import copy
 
 def sigmoid(x, beta, x0):
     return 1./ (1. + numpy.exp(-beta * (x - x0)))
@@ -80,13 +81,14 @@ def connect(source, target, processing_steps):
         projection.set_output_dimensionality(target_input_dimensionality)
 
         if (source_output_dimensionality == target_input_dimensionality):
-
+            pass
 
 
         scaler_index = scaler_indeces[0]
         projection_index = projection_indeces[0]
 
         if (scaler_index > projection_index):
+            pass
             
     
 
@@ -103,6 +105,7 @@ def connect(source, target, processing_steps):
     
     # if a projection is needed between source and target ..
     if (source_output_dimensionality != target_input_dimensionality):
+        pass
         # .. check if there is exactly one projection in the processing steps and set up
         # its dimensionality and dimension sizes for input and output
 
@@ -148,8 +151,8 @@ class Connectable:
         self._incoming_connectables = []
         # list of connected objects that receive input from this connectable (outgoing)
         self._outgoing_connectables = []
-        # the buffers for the output
-        self._output_buffers = []
+        # the buffer for the output
+        self._output_buffer = None
         
         # dimensionality of the input
         self._input_dimensionality = None
@@ -440,8 +443,7 @@ class Weight(ProcessingStep):
         self._weight = weight
 
     def step(self):
-        for i in xrange(len(self._output_buffers)):
-            self._output_buffers[i] = self._incoming_connectables[i].get_output() * self._weight
+        self._output_buffer = self._incoming_connectables[i].get_output() * self._weight
     
     def get_weight(self):
         return self._weight
@@ -464,6 +466,7 @@ class Projection(ProcessingStep):
     "Projection of an input onto an output of a different dimensionality."
     
     def __init__(self, input_dimensionality, output_dimensionality, input_dimensions=set(), output_dimensions=[]):
+        ProcessingStep.__init__(self)
         self._input_dimensionality = input_dimensionality
         self._output_dimensionality = output_dimensionality
         self._input_dimensions = input_dimensions
@@ -483,51 +486,80 @@ class Projection(ProcessingStep):
                 print """Warning. You have created a projection processing step that neither changes the dimensionality,
                        nor reorders the dimension indices and thus does nothing but waste processing power. :)"""
 
-        # get a set (unordered) of dimensions, which will be compressed (i.e., projected onto the remaining dimensions).
-        # if no input dimensions are given, then the whole input will be compressed to a scalar.
-        self._dimensions_to_compress = set(range(input_dimensionality)).difference(set(input_dimensions))
-        # get a sequence (ordered) of dimensions, which will be expanded (i.e., the remaining dimensions will be copied into them)
-        #self._dimensions_to_expand = range(self._output_dimensionality)
-        #for dimension in self._output_dimensions:
-        #    self._dimensions_to_expand.remove(dimension)
-            
+        self._projection_compresses = False
+        self._projection_expands = False
 
-        if (len(self._dimensions_to_compress) > 0 and len(self._output_dimensions) < self._output_dimensionality):
+        if (len(self._input_dimensions) < self._input_dimensionality):
+            self._projection_compresses = True
+            
+        if (len(self._output_dimensions) < self._output_dimensionality):
+            self._projection_expands = True
+
+        if (self._projection_compresses and self._projection_expands):
             raise ConnectError("""The projection is set up to both compress the input and expand it afterwards.
                                This is not supported. Please use two separate projection processing steps to
                                achieve the same effect.""")
 
-        self._expand = None
-        if (self._input_dimensionality < self._output_dimensionality):
+        # get a set (unordered) of dimensions, which will be compressed (i.e., projected onto the remaining dimensions).
+        # if no input dimensions are given, then the whole input will be compressed to a scalar.
+        self._dimensions_to_compress = None
+        if (self._projection_compresses):
+            self._dimensions_to_compress = set(range(input_dimensionality)).difference(set(input_dimensions))
+
+        self._expand_method = None
+        self._transpose_permutation = None
+        self._inverse_transpose_permutation = None
+        if (self._projection_expands):
             if (self._input_dimensionality == 0):
-                self._expand = self._expand_0D
+                self._expand_method = self._expand_0D
             elif (self._input_dimensionality == 1):
                 if (self._output_dimensionality == 2):
-                    self._expand = self._expand_1D_2D
+                    self._expand_method = self._expand_1D_2D
                 elif (self._output_dimensionality == 3):
-                    self._expand = self._expand_1D_3D
-                else
+                    self._expand_method = self._expand_1D_3D
+
+                    if (self._output_dimensions[0] == 0):
+                        indeces = range(self._output_dimensionality)
+                        for d in self._output_dimensions:
+                            indeces.remove(d)
+
+                        third_dimension_index = indeces[0]
+                        second_dimension_index = indeces[1]
+                        first_dimension_index = self._output_dimensions[0]
+                        self._transpose_permutation = (third_dimension_index, second_dimension_index, first_dimension_index)
+                        self._inverse_transpose_permutation = self._invert_transpose_permutation(self._transpose_permutation)
+                else:
                     raise ConnectError("""You are trying to expand a 1D input to
                                        something other than 2D or 3D. This is not yet supported.""")
             elif (self._input_dimensionality == 2):
                 if (self._output_dimensionality == 3):
-                    self._expand = self._expand_2D_3D
-                else
+                    self._expand_method = self._expand_2D_3D
+
+                    indeces = range(self._output_dimensionality)
+                    for d in self._output_dimensions:
+                        indeces.remove(d)
+
+                    third_dimension_index = indeces[0]
+                    self._transpose_permutation = copy.copy(self._output_dimensions)
+                    self._transpose_permutation.insert(0, third_dimension_index)
+                    self._inverse_transpose_permutation = self._invert_permutation(self._transpose_permutation)
+                else:
                     raise ConnectError("""You are trying to expand a 2D input to
                                        something other than 3D. This is not yet supported.""")
         
 
     def step(self):
-        input = self._incoming_connectables[i].get_output()
+        input = self._incoming_connectables[0].get_output()
 
-        if (len(self._dimensions_to_compress) > 0):
+        if (self._projection_compresses):
             for i in xrange(len(self._dimensions_to_compress)):
                 input = input.max(self._dimensions_to_compress[i] - i)
+        elif (self._projection_expands):
+            self._output_buffer = self._expand_method(input)
 
-            self._output_buffers[0] = numpy.transpose(input, self._output_dimensions)
-
-        if (self._input_dimensionality < self._output_dimensionality):
-            self._output_buffer[0] = self._expand(input)
+        if (self._projection_expands is not True):
+            self._output_buffer = numpy.transpose(input, self._output_dimensions)
+            
                
 
     def _expand_0D(self, input):
@@ -537,7 +569,7 @@ class Projection(ProcessingStep):
         output = numpy.zeros(self._output_dimension_sizes)
 
         transpose = False
-        if (self._output_dimensions != range(self._output_dimensionality - 1)):
+        if (self._output_dimensions[0] == 0):
             transpose = True
             output = numpy.transpose(output)
 
@@ -552,58 +584,42 @@ class Projection(ProcessingStep):
     def _expand_1D_3D(self, input):
         output = numpy.zeros(self._output_dimension_sizes)
 
-        third_dimension_index = 2
-        second_dimension_index = 1
-        first_dimension_index = 0
-        transpose_permutation = None
-        if (self._output_dimensions != range(self._output_dimensionality - 2)):
-            indeces = range(self._output_dimensionality)
-            for d in self._output_dimensions:
-                indeces.remove(d)
-
-            third_dimension_index = indeces[0]
-            second_dimension_index = indeces[1]
-            first_dimension_index = self._output_dimensions[0]
-            transpose_permutation = (third_dimension_index, second_dimension_index, first_dimension_index)
+        if (self._transpose_permutation is not None):
             output_numpy.transpose(output, transpose_permutation)
 
-        two_dim_activation = numpy.zeros((self._output_dimension_sizes[second_dimension_index], self._output_dimension_sizes[first_dimension_index]))
+        second_dimension_size = self._output_dimension_sizes[transpose_permutation[1]]
+        first_dimension_size = self._output_dimension_sizes[transpose_permutation[2]]
+
+        two_dim_activation = numpy.zeros((second_dimension_size, first_dimension_size))
         for i in xrange(len(two_dim_activation)):
             two_dim_activation[i] = input
 
         for i in xrange(len(output)):
             output[i] = two_dim_activation
 
-        if (transpose_permutation is not None):
-            output = numpy.transpose(output, _invert_permutation(transpose_permutation))
+        if (self._transpose_permutation is not None):
+            output = numpy.transpose(output, self._inverse_transpose_permutation)
 
         return output
 
     def _expand_2D_3D(self, input):
         output = numpy.zeros(self._output_dimension_sizes)
 
-        transpose_permutation = None
-        if (self._output_dimensions != range(self._output_dimensionality - 1)):
-            indeces = range(self._output_dimensionality)
-            for d in self._output_dimensions:
-                indeces.remove(d)
-
-            third_dimension_index = indeces[0]
-            transpose_permutation = copy(self._output_dimensions).insert(third_dimension_index, 0)
-            output = numpy.transpose(output, transpose_permutation)
+        if (self._transpose_permutation is not None):
+            output = numpy.transpose(output, self._transpose_permutation)
 
         for i in xrange(len(output)):
             output[i] = input
 
-        if (transpose_permutation is not None):
-            output = numpy.transpose(output, _invert_permutation(transpose_permutation))
+        if (self._transpose_permutation is not None):
+            output = numpy.transpose(output, self._inverse_transpose_permutation)
 
         return output
 
     def _invert_permutation(self, permutation):
-        inverse_permutation = copy(permutation)
+        inverse_permutation = []
         for i in range(len(permutation)):
-            inverse_permutation[i] = permutation.index(i)
+            inverse_permutation.append(permutation.index(i))
 
         return inverse_permutation
 

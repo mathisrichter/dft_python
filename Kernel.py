@@ -78,16 +78,54 @@ class KernelMode:
         if not (dimension_index >= 0 and dimension_index < dimensionality):
             print("Error. Kernel mode only supports ", dimensionality, "dimensions.")
 
+class Kernel:
+    "n-dimensional kernel"
+    
+    def __init__(self, dimensionality):
+        self._dimensionality = None
+        self._dimension_sizes = []
+    
+    def get_dimension_size(self, dimension_index):
+        return self._dimension_sizes[dimension_index]
+
+    def get_dimension_sizes(self):
+        return self._dimension_sizes
+
+    def get_dimensionality(self):
+        return self._dimensionality
+    
+    def get_separated_kernel_parts(self, dimension_index):
+        pass
+    
+    
+
+class BoxKernel(Kernel):
+    "n-dimensional box kernel"
+    
+    def __init__(self, dimensionality=None):
+        Kernel.__init__(self, 1)
+        self._dimensionality = 1
+        self._amplitude = 5.0
+        self._kernel = numpy.ones(shape=(1)) * self._amplitude
+    
+    def get_separated_kernel_parts(self, dimension_index):
+        return self._kernel
+        
+    def get_amplitude(self):
+        return self._amplitude
+    
+    def set_amplitude(self, amplitude):
+        self._amplitude = amplitude        
 
 
-class GaussKernel:
+class GaussKernel(Kernel):
     "n-dimensional Gauss kernel"
 
     def __init__(self, dimensionality):
         "Constructor"
+        
+        Kernel.__init__(self, dimensionality)
 
-        self._dimensionality = dimensionality
-        self._dimension_sizes = []
         self._modes = []
         self._separated_kernel_parts = []
         self._limit = 0.01
@@ -143,15 +181,6 @@ class GaussKernel:
             max_width = int(max(width, max_width))
 
         return max_width
-
-    def get_dimension_size(self, dimension_index):
-        return self._dimension_sizes[dimension_index]
-
-    def get_dimension_sizes(self):
-        return self._dimension_sizes
-
-    def get_dimensionality(self):
-        return self._dimensionality
 
     def get_separated_kernel_parts(self, dimension_index):
         return self._separated_kernel_parts[dimension_index]
