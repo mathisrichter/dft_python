@@ -202,7 +202,7 @@ class DynamicField(Connectable):
 
     _instance_counter = 0
 
-    def __init__(self, dimension_sizes, interaction_kernel=None):
+    def __init__(self, dimension_sizes=[], interaction_kernel=None):
         "Constructor"
         Connectable.__init__(self)
 
@@ -217,12 +217,14 @@ class DynamicField(Connectable):
         
         # name of the field
         self._name = str('')
-
+        
         # dimensionality of the field
         self._input_dimensionality = len(dimension_sizes)
         self._output_dimensionality = self._input_dimensionality
 
         # sizes in each dimension (in fields, input and output have the same dimensionality)
+        if (self._input_dimensionality == 0):
+            dimension_sizes = [1]
         self._input_dimension_sizes = dimension_sizes
         self._output_dimension_sizes = dimension_sizes
          
@@ -461,7 +463,6 @@ class Scaling(ProcessingStep):
     def step(self):
         pass
 
-
 class Projection(ProcessingStep):
     "Projection of an input onto an output of a different dimensionality."
     
@@ -504,7 +505,7 @@ class Projection(ProcessingStep):
         # if no input dimensions are given, then the whole input will be compressed to a scalar.
         self._dimensions_to_compress = None
         if (self._projection_compresses):
-            self._dimensions_to_compress = set(range(input_dimensionality)).difference(set(input_dimensions))
+            self._dimensions_to_compress = list(set(range(input_dimensionality)).difference(set(input_dimensions)))
 
         self._expand_method = None
         self._transpose_permutation = None
@@ -518,16 +519,15 @@ class Projection(ProcessingStep):
                 elif (self._output_dimensionality == 3):
                     self._expand_method = self._expand_1D_3D
 
-                    if (self._output_dimensions[0] == 0):
-                        indeces = range(self._output_dimensionality)
-                        for d in self._output_dimensions:
-                            indeces.remove(d)
+                    indeces = range(self._output_dimensionality)
+                    for d in self._output_dimensions:
+                        indeces.remove(d)
 
-                        third_dimension_index = indeces[0]
-                        second_dimension_index = indeces[1]
-                        first_dimension_index = self._output_dimensions[0]
-                        self._transpose_permutation = (third_dimension_index, second_dimension_index, first_dimension_index)
-                        self._inverse_transpose_permutation = self._invert_transpose_permutation(self._transpose_permutation)
+                    third_dimension_index = indeces[0]
+                    second_dimension_index = indeces[1]
+                    first_dimension_index = self._output_dimensions[0]
+                    self._transpose_permutation = (third_dimension_index, second_dimension_index, first_dimension_index)
+                    self._inverse_transpose_permutation = self._invert_permutation(self._transpose_permutation)
                 else:
                     raise ConnectError("""You are trying to expand a 1D input to
                                        something other than 2D or 3D. This is not yet supported.""")
@@ -585,10 +585,10 @@ class Projection(ProcessingStep):
         output = numpy.zeros(self._output_dimension_sizes)
 
         if (self._transpose_permutation is not None):
-            output_numpy.transpose(output, transpose_permutation)
+            output = numpy.transpose(output, self._transpose_permutation)
 
-        second_dimension_size = self._output_dimension_sizes[transpose_permutation[1]]
-        first_dimension_size = self._output_dimension_sizes[transpose_permutation[2]]
+        second_dimension_size = self._output_dimension_sizes[self._transpose_permutation[1]]
+        first_dimension_size = self._output_dimension_sizes[self._transpose_permutation[2]]
 
         two_dim_activation = numpy.zeros((second_dimension_size, first_dimension_size))
         for i in xrange(len(two_dim_activation)):
