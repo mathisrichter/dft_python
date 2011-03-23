@@ -28,113 +28,72 @@ def connect(source, target, processing_steps):
         raise ConnectError("Source dimensionality is unknown. Cannot set up architecture without this information.")
     if source_output_dimension_sizes is None:
         raise ConnectError("Source dimension sizes are unknown. Cannot set up architecture without this information.")
-    if target_output_dimensionality is None:
+    if target_input_dimensionality is None:
         raise ConnectError("Target dimensionality is unknown. Cannot set up architecture without this information.")
-    if target_output_dimension_sizes is None:
+    if target_input_dimension_sizes is None:
         raise ConnectError("Target dimension sizes are unknown. Cannot set up architecture without this information.")
 
     # get the indeces of scaler and projection processing steps
     projection_indeces = []
     scaler_indeces = []
     for i in xrange(len(processing_steps)):
-        if (processing_steps[i].is_instance_of(Scaling)):
+        if (isinstance(processing_steps[i], Scaling)):
             scaler_indeces.append(i)
-        if (processing_steps[i].is_instance_of(Projection)):
+        if (isinstance(processing_steps[i], Projection)):
             projection_indeces.append(i)
     
     # print error if there is more than one scaler in the processing steps
     if (len(scaler_indeces) > 1):
         raise ConnectError("You want to connect more than one scaler between source and target. This is not supported.")
 
-    # if there is no projection processing step ..
-    if (len(projection_indeces) < 1):
-        # .. check if the dimensionalities of source and target agree. if they don't match ..
-        if (source_output_dimensionality != target_input_dimensionality):
-            # throw an error, because in this case you need a projection processing step.
+    
+    # if the source and target dimensionalities do not match ..
+    if (source_output_dimensionality != target_input_dimensionality):
+        # .. check that there is at least one projection in place.
+        if (len(projection_indeces) == 0):
             raise ConnectError("""You need a projection processing step to connect source and target,
                                because they are of different dimensionality.""")
-        else:
-            if (source_output_dimension_sizes != target_input_dimension_sizes):
-                if len(scaler_indeces < 1):
-                    raise ConnectError("""You need a scaler processing step to connect source and target,
-                                       because they differ in the size of at least one dimension.""")
-                else:
-                    scaler = processing_steps[scaler_indeces[0]]
-                    scaler.set_input_dimension_sizes(source_output_dimension_sizes)
-                    scaler.set_output_dimension_sizes(target_input_dimension_sizes)
+    # if the source and target dimensionalities match ..
     else:
-        projections = [source]
-        for index in projection_indeces:
-            projections.append(processing_steps[index])
-        projections.append(target)
-
-        for i in xrange(len(projections)):
-            if (i + 1 < len(projections)):
-                if (projections[i].get_output_dimensionality() != projections[i+1].get_input_dimensionality):
-                    raise ConnectError("The dimensionalities of the connectables ",
-                                        projections[i].get_name(), " and ", projections[i+1].get_name(),
-                                        " do not match.")
-
-
-        projection = processing_steps[projection_indeces[0]]
-        projection.set_input_dimensionality(source_output_dimensionality)
-        projection.set_output_dimensionality(target_input_dimensionality)
-
-        if (source_output_dimensionality == target_input_dimensionality):
-            pass
-
-
-        scaler_index = scaler_indeces[0]
-        projection_index = projection_indeces[0]
-
-        if (scaler_index > projection_index):
-            pass
-            
+        # .. but the sizes of the dimensions do not match ..
+        if (source_output_dimension_sizes != target_input_dimension_sizes):
+            # .. check that there is either a projection or a scaler in place.
+            if (len(scaler_indeces) == 0 and len(projection_indeces) == 0):
+                raise ConnectError("""You need a scaler processing step to connect source and target,
+                                   because they differ in the size of at least one dimension.
+                                   Alternatively, you might also need a projection, which only transposes
+                                   the given input.""")
     
-
-
-        
-        
-
-    processing_steps[i].set_input_dimensionality(source_output_dimensionality)
-    processing_steps[i].set_input_dimension_sizes(source_output_dimension_sizes)
-    processing_steps[i].set_output_dimensionality(target_input_dimensionality)
-    processing_steps[i].set_output_dimension_sizes(target_input_dimension_sizes)
-
-
-    
-    # if a projection is needed between source and target ..
-    if (source_output_dimensionality != target_input_dimensionality):
-        pass
-        # .. check if there is exactly one projection in the processing steps and set up
-        # its dimensionality and dimension sizes for input and output
-
-        
-
-    
-    # put source, target, and all processing steps in a single list
-    connectables = processing_steps
+    # create a list containing all connectables that are to be connected (source, all processing steps, and target)
+    connectables = copy.copy(processing_steps)
     connectables.insert(0, source)
     connectables.append(target)
     
-    for i in xrange(len(connectables)):
-        
-        
+    for i in xrange(len(connectables)-1):
+        # check that the dimensionalities match pairwise in the sequence of connectables
+        if (connectables[i].get_output_dimensionality() != connectables[i+1].get_input_dimensionality()):
+            raise ConnectError("The dimensionality of the connectables " + connectables[i].get_name()
+                               + " and " + connectables[i+1].get_name() + " do not match.")
         
         # connect source and target
-        source.get_outgoing_connectables().append(target)
-        target.get_incoming_connectables().append(source)
+        connectables[i].add_outgoing_connectable(connectables[i+1])
+        connectables[i+1].add_incoming_connectable(connectables[i])
 
-
-
-
-    # check if source and target dimension sizes match
-    source_output_dimension_sizes = source.get_output_dimension_sizes()
-    target_input_dimension_sizes = target.get_input_dimensionality()
-
-    for output_size, input_size in source_output_dimension_sizes, target_intput_dimension_sizes:
-        if output_size != input_size:
-            raise ConnectError("Source and target cannot be connected due to mismatching size of at least one dimension.")
+    for i in xrange(1, len(connectables)-1):
+        last_output_dimension_sizes = connectables[i-1].get_output_dimension_sizes()
+        current_input_dimension_sizes = connectables[i].get_input_dimension_sizes()
+        current_output_dimension_sizes = connectables[i].get_output_dimension_sizes()
+        next_input_dimension_sizes = connectables[i+1].get_input_dimension_sizes()
+        
+        if (current_input_dimension_sizes == None):
+            connectables[i].set_input_dimension_sizes(last_output_dimension_sizes)
+        else:
+            if (current_input_dimension_sizes != last_output_dimension_sizes):
+                raise ConnectError("The sizes of at least one dimension do not match between the connectables "
+                                   + connectables[i-1].get_name() + "and " + connectables[i].get_name() + ".")
+        
+        if (current_output_dimension_sizes == None):
+            connectables[i].determine_output_dimension_sizes()            
 
 
 def disconnect(source, target):
@@ -161,13 +120,25 @@ class Connectable:
         # dimension sizes of the input
         self._input_dimension_sizes = None
         # dimension sizes of the output
-        self._output_dimension_sizes = None  
+        self._output_dimension_sizes = None
 
     def get_incoming_connectables(self):
         return self._incoming_connectables
+    
+    def add_incoming_connectable(self, source):
+        self._incoming_connectables.append(source)
 
     def get_outgoing_connectables(self):
         return self._outgoing_connectables
+
+    def add_outgoing_connectable(self, target):
+        self._outgoing_connectables.append(target)
+    
+    def set_name(self, name):
+        self._name = name
+    
+    def get_name(self):
+        return self._name
 
     def get_output(self):
         return self._output_buffer
@@ -195,6 +166,9 @@ class Connectable:
 
     def set_output_dimension_sizes(self, dimension_sizes):
         self._output_dimension_sizes = dimension_sizes
+    
+    def determine_output_dimension_sizes(self):
+        self._output_dimension_sizes = self._input_dimension_sizes
 
 
 class DynamicField(Connectable):
@@ -484,8 +458,8 @@ class Projection(ProcessingStep):
         
         if (self._input_dimensionality == self._output_dimensionality):
             if (self._input_dimensions == self._output_dimensions):
-                print """Warning. You have created a projection processing step that neither changes the dimensionality,
-                       nor reorders the dimension indices and thus does nothing but waste processing power. :)"""
+                raise ConnectError("""Warning. You have created a projection processing step that neither changes the dimensionality,
+                       nor reorders the dimension indices and thus does nothing but waste processing power. :)""")
 
         self._projection_compresses = False
         self._projection_expands = False
@@ -559,8 +533,17 @@ class Projection(ProcessingStep):
 
         if (self._projection_expands is not True):
             self._output_buffer = numpy.transpose(input, self._output_dimensions)
+    
+    def determine_output_dimension_sizes(self):
+        if (self._projection_compresses):
+            selected_dimension_sizes = []
             
-               
+            for input_dimension in self._input_dimensions:
+                selected_dimension_sizes.append(self._input_dimension_sizes[input_dimension])
+            
+            self._output_dimension_sizes = [selected_dimension_sizes[i] for i in self._output_dimensions]
+
+
 
     def _expand_0D(self, input):
         return numpy.zeros(self._output_dimension_sizes) + input
