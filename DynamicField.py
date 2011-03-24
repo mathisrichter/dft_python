@@ -455,11 +455,19 @@ class Projection(ProcessingStep):
 
         if (len(self._input_dimensions) != len(self._output_dimensions)):
             raise ConnectError("Number of input dimensions should always be equal to the number of output dimensions.")
+
+        if (max(self._input_dimensions) >= self._input_dimensionality):
+            raise ConnectError("""At least one of the indices of your selected input dimensions is higher than the
+                               input dimensionality.""")
+
+        if (max(self._output_dimensions) >= self._output_dimensionality):
+            raise ConnectError("""At least one of the indices of your selected output dimensions is higher than the
+                               output dimensionality.""")
         
         if (self._input_dimensionality == self._output_dimensionality):
             if (self._input_dimensions == self._output_dimensions):
-                raise ConnectError("""Warning. You have created a projection processing step that neither changes the dimensionality,
-                       nor reorders the dimension indices and thus does nothing but waste processing power. :)""")
+                print """Warning. You have created a projection processing step that neither changes the dimensionality,
+                       nor reorders the dimension indices and thus does nothing but waste processing power. :)"""
 
         self._projection_compresses = False
         self._projection_expands = False

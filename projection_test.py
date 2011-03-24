@@ -9,10 +9,10 @@ def main():
 
     field_0 = DynamicField.DynamicField([2,3,4], None)
     field_0.set_name("Field0")
-    field_1 = DynamicField.DynamicField([4,3,2], None)
+    field_1 = DynamicField.DynamicField([4,3], None)
     field_1.set_name("Field1")
 
-    projection = DynamicField.Projection(3, 3, set([0,1,2]), [2,1,0])
+    projection = DynamicField.Projection(3, 2, set([1,2]), [1,0])
     projection.set_name("Projection")
     
     DynamicField.connect(field_0, field_1, [projection])
