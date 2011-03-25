@@ -82,7 +82,7 @@ class Kernel:
     "n-dimensional kernel"
     
     def __init__(self, dimensionality):
-        self._dimensionality = None
+        self._dimensionality = dimensionality
         self._dimension_sizes = []
     
     def get_dimension_size(self, dimension_index):

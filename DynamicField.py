@@ -35,18 +35,28 @@ def connect(source, target, processing_steps):
 
     # get the indeces of scaler and projection processing steps
     projection_indeces = []
+    expanding_projection_indeces = []
     scaler_indeces = []
     for i in xrange(len(processing_steps)):
         if (isinstance(processing_steps[i], Scaling)):
             scaler_indeces.append(i)
         if (isinstance(processing_steps[i], Projection)):
             projection_indeces.append(i)
+            if (processing_steps[i].projection_expands() is True):
+               expanding_projection_indeces.append(i) 
     
     # print error if there is more than one scaler in the processing steps
     if (len(scaler_indeces) > 1):
         raise ConnectError("You want to connect more than one scaler between source and target. This is not supported.")
 
-    
+    # check that there is no scaler or other projection after the last expanding projection
+    if (len(expanding_projection_indeces) > 0):
+        if ((len(scaler_indeces) > 0 and expanding_projection_indeces[-1] < scaler_indeces[-1]) or
+            expanding_projection_indeces[-1] < projection_indeces[-1]):
+            raise ConnectError("""You are trying to put a scaler processing step or
+                               a an additional projection after an expanding
+                               projection. This is not supported.""")
+        
     # if the source and target dimensionalities do not match ..
     if (source_output_dimensionality != target_input_dimensionality):
         # .. check that there is at least one projection in place.
@@ -75,16 +85,17 @@ def connect(source, target, processing_steps):
             raise ConnectError("The dimensionality of the connectables " + connectables[i].get_name()
                                + " and " + connectables[i+1].get_name() + " do not match.")
         
-        # connect source and target
+        # connect this connectable and the next
         connectables[i].add_outgoing_connectable(connectables[i+1])
         connectables[i+1].add_incoming_connectable(connectables[i])
 
+    # determine the input and output dimension sizes of all connectables
     for i in xrange(1, len(connectables)-1):
         last_output_dimension_sizes = connectables[i-1].get_output_dimension_sizes()
         current_input_dimension_sizes = connectables[i].get_input_dimension_sizes()
         current_output_dimension_sizes = connectables[i].get_output_dimension_sizes()
         next_input_dimension_sizes = connectables[i+1].get_input_dimension_sizes()
-        
+
         if (current_input_dimension_sizes == None):
             connectables[i].set_input_dimension_sizes(last_output_dimension_sizes)
         else:
@@ -94,6 +105,7 @@ def connect(source, target, processing_steps):
         
         if (current_output_dimension_sizes == None):
             connectables[i].determine_output_dimension_sizes()            
+            current_output_dimension_sizes = connectables[i].get_output_dimension_sizes()
 
 
 def disconnect(source, target):
@@ -543,15 +555,36 @@ class Projection(ProcessingStep):
             self._output_buffer = numpy.transpose(input, self._output_dimensions)
     
     def determine_output_dimension_sizes(self):
-        if (self._projection_compresses):
-            selected_dimension_sizes = []
-            
-            for input_dimension in self._input_dimensions:
-                selected_dimension_sizes.append(self._input_dimension_sizes[input_dimension])
-            
-            self._output_dimension_sizes = [selected_dimension_sizes[i] for i in self._output_dimensions]
+        if (len(self._outgoing_connectables) > 0):
+            if (self._projection_expands):
+                next_input_dimension_sizes = self._outgoing_connectables[0].get_input_dimension_sizes()
+                if (next_input_dimension_sizes is None):
+                    raise ConnectError("""The connectable after the expanding
+                                       projection does not know its input
+                                       dimension sizes. This should not
+                                       happen.""")
+                self._output_dimension_sizes = next_input_dimension_sizes
+            else:
+                selected_dimension_sizes = []
+                
+                for input_dimension in self._input_dimensions:
+                    selected_dimension_sizes.append(self._input_dimension_sizes[input_dimension])
+                
+                self._output_dimension_sizes = [selected_dimension_sizes[i] for i in self._output_dimensions]
+        else:
+            raise ConnectError("""You are trying to determine the output
+                               dimension size of a connectable that does not
+                               have an outgoing connection to another
+                               connectable. This should not happen.""")
 
+    def determine_input_dimension_sizes(self):
+        pass
 
+    def projection_expands(self):
+        return self._projection_expands
+
+    def projection_compresses(self):
+        return self._projection_compresses
 
     def _expand_0D(self, input):
         return numpy.zeros(self._output_dimension_sizes) + input

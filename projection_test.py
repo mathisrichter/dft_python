@@ -1,18 +1,18 @@
 import DynamicField
-import GaussKernel
+import Kernel
 
 def main():
-    interaction_kernel = GaussKernel.GaussKernel(1)
+    interaction_kernel = Kernel.GaussKernel(1)
     interaction_kernel.add_mode(1.0, [0.5], [0.0])
     interaction_kernel.add_mode(-5.5, [5.5], [0.0])
     interaction_kernel.calculate()
 
-    field_0 = DynamicField.DynamicField([2,3,4], None)
+    field_0 = DynamicField.DynamicField([2,3], None)
     field_0.set_name("Field0")
-    field_1 = DynamicField.DynamicField([4,3], None)
+    field_1 = DynamicField.DynamicField([4,3,2], None)
     field_1.set_name("Field1")
 
-    projection = DynamicField.Projection(3, 2, set([1,2]), [1,0])
+    projection = DynamicField.Projection(2, 3, set([0,1]), [2,1])
     projection.set_name("Projection")
     
     DynamicField.connect(field_0, field_1, [projection])
