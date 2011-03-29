@@ -7,20 +7,18 @@ def main():
     interaction_kernel.add_mode(-5.5, [5.5], [0.0])
     interaction_kernel.calculate()
 
-    field_0 = DynamicField.DynamicField([10,3,5], None)
+    field_0 = DynamicField.DynamicField([[0,0.6],[-0.2,0.2]], [0.1, 0.1], None)
     field_0.set_name("Field0")
-    field_1 = DynamicField.DynamicField([4,3,2], None)
+    field_1 = DynamicField.DynamicField([[-5,5],[-2,0],[0,5]],[1.,1.,1.], None)
     field_1.set_name("Field1")
 
     scaler = DynamicField.Scaler()
     scaler.set_name("Scaler")
 
-    projection_0 = DynamicField.Projection(3, 1, set([0]), [0])
+    projection_0 = DynamicField.Projection(2, 3, set([0,1]), [0,2])
     projection_0.set_name("Projection0")
-    projection_1 = DynamicField.Projection(1, 3, set([0]), [2])
-    projection_1.set_name("Projection1")
 
-    processing_steps = [projection_0, scaler, projection_1]
+    processing_steps = [projection_0]
     
     DynamicField.connect(field_0, field_1, processing_steps)
 
@@ -32,12 +30,18 @@ def main():
 
 #    for i in range(0, 500):
     field_0.step()
+    print("field 0:")
+    print(field_0.get_output())
+    print(field_0.get_output().shape)
     for processing_step in processing_steps:
         processing_step.step()
+        print(processing_step.get_name() + ": ")
+        print(processing_step.get_output())
+        print(processing_step.get_output().shape)
     field_1.step()
-    output = projection_1.get_output()
-    print(output)
-    print(output.shape)
+    print("field 1:")
+    print(field_1.get_output())
+    print(field_1.get_output().shape)
 
 if __name__ == "__main__":
     main()

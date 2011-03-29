@@ -197,13 +197,15 @@ class Connectable:
     def determine_output_dimension_sizes(self):
         self._output_dimension_sizes = self._input_dimension_sizes
 
+    def determine_input_dimension_sizes(self):
+        self._input_dimension_sizes = self._output_dimension_sizes
 
 class DynamicField(Connectable):
     "Dynamic field"
 
     _instance_counter = 0
 
-    def __init__(self, dimension_sizes=[], interaction_kernel=None):
+    def __init__(self, dimension_bounds=[], dimension_resolutions=[], interaction_kernel=None):
         "Constructor"
         Connectable.__init__(self)
 
@@ -218,19 +220,43 @@ class DynamicField(Connectable):
         
         # name of the field
         self._name = str('')
+
+        # pair of bounds for each dimension (e.g., (-5,15) [mm])
+        self._dimension_bounds = dimension_bounds
+        # resolution for each dimension (e.g., 0.1 mm/sample)
+        self._dimension_resolutions = dimension_resolutions
         
         # dimensionality of the field
-        self._input_dimensionality = len(dimension_sizes)
+        self._input_dimensionality = len(self._dimension_bounds)
         self._output_dimensionality = self._input_dimensionality
+
+        # check that there is a resolution for each pair of dimension bounds
+        if (len(self._dimension_bounds) != len(self._dimension_resolutions)):
+            raise ConnectError("""The number of pairs of dimension bounds
+                               differs from the number of dimension
+                               resolutions.""")
+
+        # discrete sizes in each dimension
+        dimension_sizes = []
 
         # sizes in each dimension (in fields, input and output have the same dimensionality)
         if (self._input_dimensionality == 0):
             dimension_sizes = [1]
+
+        # compute the discrete dimension sizes from the bounds and resolution of each dimension
+        for i in xrange(len(self._dimension_bounds)):
+            if (len(self._dimension_bounds[i]) != 2):
+                raise ConnectError("""At least one of the field's dimension
+                                   bounds does not have exactly two values.
+                                   Please supply a minimum and maximum.""")
+
+            dimension_sizes.append((self._dimension_bounds[i][1] - self._dimension_bounds[i][0]) / self._dimension_resolution[i])
+
         self._input_dimension_sizes = dimension_sizes
         self._output_dimension_sizes = dimension_sizes
          
         # amount of self excitation of the system
-        self._lateral_interaction = numpy.zeros(shape=dimension_sizes)
+        self._lateral_interaction = numpy.zeros(shape=self._output_dimension_sizes)
         # convolution kernel used to generate lateral interaction
         self._lateral_interaction_kernel = interaction_kernel
 
@@ -243,7 +269,7 @@ class DynamicField(Connectable):
         self._boost = 0.0
         # current value of the system (initialize it with the resting level,
         # because the field would relax to it without external input anyway)
-        self._activation = numpy.zeros(shape=dimension_sizes) + self._resting_level
+        self._activation = numpy.zeros(shape=self._output_dimension_sizes) + self._resting_level
 
         # controls how fast the system relaxes
         self._relaxation_time = 20.0
@@ -267,6 +293,12 @@ class DynamicField(Connectable):
 
     def get_dimensionality(self):
         return self._output_dimensionality
+
+    def get_dimension_bounds(self):
+        return self._dimension_bounds
+
+    def get_dimension_resolutions(self):
+        return self._dimension_resolutions
 
     def get_id(self):
         return self._id
@@ -400,7 +432,7 @@ class ProcessingGroup(Connectable):
         Connectable.__init__(self)
         self._processing_steps = []
 
-    def add_processing_step(self, processing_step, position = None):
+    def add_processing_step(self, processing_step, position=None):
         if position is None:
             position = len(self._processing_steps)
         self._processing_steps.insert(position, processing_step)
@@ -462,8 +494,8 @@ class Scaler(ProcessingStep):
         ProcessingStep.__init__(self)
 
     def step(self):
-        input = self._incoming_connectables[0].get_output()
-        self._output_buffer = input.resize(self._output_dimension_sizes, refcheck=False)
+        self._output_buffer = copy.copy(self._incoming_connectables[0].get_output())
+        self._output_buffer.resize(self._output_dimension_sizes, refcheck=False)
 
     def determine_output_dimension_sizes(self):
         if (len(self._outgoing_connectables) > 0):
