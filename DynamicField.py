@@ -1,7 +1,6 @@
 import math
 import random
 import Kernel
-from scipy import ndimage
 import numpy
 import copy
 
@@ -224,6 +223,10 @@ class DynamicField(Connectable):
         # pair of bounds for each dimension (e.g., (-5,15) [mm])
         self._dimension_bounds = dimension_bounds
         # resolution for each dimension (e.g., 0.1 mm/sample)
+        # if no dimension resolutions were given, a resolution of 1 is assumed
+        # for all dimensions
+        if (dimension_resolutions == []):
+            dimension_resolutions = [1] * len(self._dimension_bounds)
         self._dimension_resolutions = dimension_resolutions
         
         # dimensionality of the field
@@ -246,11 +249,19 @@ class DynamicField(Connectable):
         # compute the discrete dimension sizes from the bounds and resolution of each dimension
         for i in xrange(len(self._dimension_bounds)):
             if (len(self._dimension_bounds[i]) != 2):
-                raise ConnectError("""At least one of the field's dimension
-                                   bounds does not have exactly two values.
-                                   Please supply a minimum and maximum.""")
+                if (len(self._dimension_bounds[i]) == 1):
+                    self._dimension_bounds[i].insert(0, 0)
+                    print """Warning. You only supplied a single bound for a
+                          dimension. Since a minimum and a maximum value are
+                          expected, the value you supplied is interpreted as
+                          the maximum. The minimum is set to zero. Please
+                          supply a tuple if you did not intend for this."""
+                else:
+                    raise ConnectError("""At least one of the field's dimension
+                                       bounds does not have exactly two values.
+                                       Please supply a minimum and maximum.""")
 
-            dimension_sizes.append((self._dimension_bounds[i][1] - self._dimension_bounds[i][0]) / self._dimension_resolution[i])
+            dimension_sizes.append((self._dimension_bounds[i][1] - self._dimension_bounds[i][0]) / self._dimension_resolutions[i])
 
         self._input_dimension_sizes = dimension_sizes
         self._output_dimension_sizes = dimension_sizes
