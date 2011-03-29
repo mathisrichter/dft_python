@@ -239,10 +239,8 @@ class DynamicField(Connectable):
                                differs from the number of dimension
                                resolutions.""")
 
-        # discrete sizes in each dimension
-        dimension_sizes = []
-
         # sizes in each dimension (in fields, input and output have the same dimensionality)
+        dimension_sizes = []
         if (self._input_dimensionality == 0):
             dimension_sizes = [1]
 
@@ -504,9 +502,20 @@ class Scaler(ProcessingStep):
     def __init__(self):
         ProcessingStep.__init__(self)
 
+
     def step(self):
-        self._output_buffer = copy.copy(self._incoming_connectables[0].get_output())
-        self._output_buffer.resize(self._output_dimension_sizes, refcheck=False)
+        input = copy.copy(self._incoming_connectables[0].get_output())
+        self._output_buffer = self._interpolate(input, self._output_dimension_sizes)
+
+    def _interpolate(self, activation, dimension_sizes):
+        if (len(dimension_sizes) == 1):
+            xp = xrange(len(activation))
+            return numpy.interp(numpy.arange(0, len(xp), len(xp)/dimension_sizes[0]), xp, activation)
+        else:
+            interpolated_activation = numpy.zeros(dimension_sizes)
+            for i in xrange(len(activation)):
+                interpolated_activation[i] = self._interpolate(activation[i], dimension_sizes[1:])
+
 
     def determine_output_dimension_sizes(self):
         if (len(self._outgoing_connectables) > 0):
