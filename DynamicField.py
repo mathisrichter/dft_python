@@ -487,7 +487,7 @@ class Weight(ProcessingStep):
         self._weight = weight
 
     def step(self):
-        self._output_buffer = self._incoming_connectables[i].get_output() * self._weight
+        self._output_buffer = self._incoming_connectables[0].get_output() * self._weight
     
     def get_weight(self):
         return self._weight
@@ -505,10 +505,7 @@ class Scaler(ProcessingStep):
 
     def step(self):
         input = copy.copy(self._incoming_connectables[0].get_output())
-        self._interpolate2()
 
-    def _interpolate2(self):
-        input = copy.copy(self._incoming_connectables[0].get_output())
         if (input.ndim == 1):
             self._interpolate_1D(input, self._output_dimension_sizes)
         elif (input.ndim == 2):
@@ -535,7 +532,14 @@ class Scaler(ProcessingStep):
 
     def _interpolate_1D(self, activation, dimension_size):
         xp = xrange(len(activation))
-        self._output_buffer = numpy.interp(numpy.arange(0, len(xp), float(len(xp))/float(self._output_dimension_sizes[0])), xp, activation)
+
+        print("dim sizes" + str(self._output_dimension_sizes))
+        self._output_buffer = numpy.interp(
+                                numpy.arange(0,
+                                 len(xp),
+                                float(len(xp))/float(self._output_dimension_sizes[0])),
+                                xp,
+                                activation)
 
     def _interpolate_2D(self, activation, new_dimension_sizes):
         old_dim0_size = len(activation)
