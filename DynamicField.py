@@ -505,16 +505,61 @@ class Scaler(ProcessingStep):
 
     def step(self):
         input = copy.copy(self._incoming_connectables[0].get_output())
-        self._output_buffer = self._interpolate(input, self._output_dimension_sizes)
+        self._interpolate2()
+
+    def _interpolate2(self):
+        input = copy.copy(self._incoming_connectables[0].get_output())
+        if (input.ndim == 1):
+            self._interpolate_1D(input, self._output_dimension_sizes)
+        elif (input.ndim == 2):
+            self._interpolate_2D(input, self._output_dimension_sizes)
 
     def _interpolate(self, activation, dimension_sizes):
-        if (len(dimension_sizes) == 1):
-            xp = xrange(len(activation))
-            return numpy.interp(numpy.arange(0, len(xp), len(xp)/dimension_sizes[0]), xp, activation)
-        else:
+        if (len(dimension_sizes) > 1):
+            print("dim > 1")
+            print(dimension_sizes)
             interpolated_activation = numpy.zeros(dimension_sizes)
-            for i in xrange(len(activation)):
-                interpolated_activation[i] = self._interpolate(activation[i], dimension_sizes[1:])
+            for i in xrange(len(interpolated_activation)):
+                interpolated_activation[i] = self._interpolate(activation[1:], dimension_sizes[1:])
+
+            return interpolated_activation
+        else:
+            print("dim 1")
+            print(dimension_sizes)
+            xp = xrange(len(activation))
+            return numpy.interp(numpy.arange(0,
+                                len(xp),
+                                float(len(xp))/float(dimension_sizes[0])),
+                                xp,
+                                activation)
+
+    def _interpolate_1D(self, activation, dimension_size):
+        xp = xrange(len(activation))
+        self._output_buffer = numpy.interp(numpy.arange(0, len(xp), float(len(xp))/float(self._output_dimension_sizes[0])), xp, activation)
+
+    def _interpolate_2D(self, activation, new_dimension_sizes):
+        old_dim0_size = len(activation)
+        tmp = numpy.zeros((old_dim0_size, new_dimension_sizes[1]))
+        xp0 = xrange(len(activation[0]))
+        for i in xrange(old_dim0_size):
+            tmp[i] = numpy.interp(numpy.arange(0,
+                                  len(xp0),
+                                  float(len(xp0))/float(self._output_dimension_sizes[1])),
+                                  xp0,
+                                  activation[i])
+
+        tmp = tmp.transpose()
+
+        old_dim0_size = len(tmp)
+        self._output_buffer = numpy.zeros((self._output_dimension_sizes[1], self._output_dimension_sizes[0]))
+        xp0 = xrange(len(tmp[0]))
+        for i in xrange(old_dim0_size): 
+            self._output_buffer[i] = numpy.interp(numpy.arange(0,
+                                                  len(xp0),
+                                                  float(len(xp0))/float(self._output_dimension_sizes[0])),
+                                                  xp0,
+                                                  tmp[i])
+        self._output_buffer = self._output_buffer.transpose()
 
 
     def determine_output_dimension_sizes(self):

@@ -7,18 +7,18 @@ def main():
     interaction_kernel.add_mode(-5.5, [5.5], [0.0])
     interaction_kernel.calculate()
 
-    field_0 = DynamicField.DynamicField([[5],[10],[6]], [], None)
+    field_0 = DynamicField.DynamicField([[10],[4]], [], None)
     field_0.set_name("Field0")
-    field_1 = DynamicField.DynamicField([[5]], [], None)
+    field_1 = DynamicField.DynamicField([[3],[5]], [], None)
     field_1.set_name("Field1")
 
     scaler = DynamicField.Scaler()
     scaler.set_name("Scaler")
 
-    projection_0 = DynamicField.Projection(3, 1, set([1]), [0])
+    projection_0 = DynamicField.Projection(2, 3, set([0,1]), [1,0])
     projection_0.set_name("Projection0")
 
-    processing_steps = [projection_0, scaler]
+    processing_steps = [scaler]
     
     DynamicField.connect(field_0, field_1, processing_steps)
 
