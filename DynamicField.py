@@ -3,6 +3,7 @@ import random
 import Kernel
 import numpy
 import copy
+from scipy.interpolate import griddata
 
 def sigmoid(x, beta, x0):
     return 1./ (1. + numpy.exp(-beta * (x - x0)))
@@ -549,9 +550,13 @@ class Scaler(ProcessingStep):
         if (input.ndim == 0):
             self._output_buffer = input
         if (input.ndim == 1):
-            self._interpolate_1D(input, self._output_dimension_sizes)
+            self._interpolate2_1D(input, self._output_dimension_sizes)
         elif (input.ndim == 2):
             self._interpolate_2D(input, self._output_dimension_sizes)
+
+    def _interpolate2(self, activation, dimension_sizes):
+        pass
+        
 
     def _interpolate(self, activation, dimension_sizes):
         if (len(dimension_sizes) > 1):
@@ -572,13 +577,18 @@ class Scaler(ProcessingStep):
                                 xp,
                                 activation)
 
+    def _interpolate2_1D(self, activation, dimension_size):
+        number_of_steps = complex(0, float(len(activation)) / float(self._output_dimension_sizes[0]))
+        grid = numpy.mgrid[0:len(activation):number_of_steps]
+        self._output_buffer = griddata(xrange(len(activation)), activation, grid, method='linear')
+
     def _interpolate_1D(self, activation, dimension_size):
         xp = xrange(len(activation))
 
         print("dim sizes" + str(self._output_dimension_sizes))
         self._output_buffer = numpy.interp(
                                 numpy.arange(0,
-                                 len(xp),
+                                len(xp),
                                 float(len(xp))/float(self._output_dimension_sizes[0])),
                                 xp,
                                 activation)

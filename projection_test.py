@@ -19,8 +19,8 @@ def main():
     blub = blub.transpose() * 40 
     input_weight = DynamicField.Weight(blub)
 
-    field_0 = DynamicField.DynamicField([[5],[2]], [], None)
-    field_1 = DynamicField.DynamicField([[3],[4]], [], None)
+    field_0 = DynamicField.DynamicField([[5]], [], None)
+    field_1 = DynamicField.DynamicField([[10]], [], None)
 
 
     scaler = DynamicField.Scaler()
@@ -30,15 +30,15 @@ def main():
 
     projection_0 = DynamicField.Projection(2, 2, set([0,1]), [1,0])
 
-    processing_steps = [projection_0, scaler, weight]
+    processing_steps = [scaler]
     
     DynamicField.connect(field_0, field_1, processing_steps)
-    DynamicField.connect(input_field, field_0, [input_weight])
+    #DynamicField.connect(input_field, field_0, [input_weight])
 
 
     for i in range(0, 500):
-        input_field.step()
-        input_weight.step()
+       # input_field.step()
+       # input_weight.step()
         field_0.step()
         print("field 0:")
         print(field_0.get_output())
