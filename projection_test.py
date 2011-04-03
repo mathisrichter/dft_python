@@ -19,14 +19,14 @@ def main():
     blub = blub.transpose() * 40 
     input_weight = DynamicField.Weight(blub)
 
-    field_0 = DynamicField.DynamicField([[5]], [], None)
-    field_1 = DynamicField.DynamicField([[10]], [], None)
+    field_0 = DynamicField.DynamicField([[5],[4],[2]], [], None)
+    field_1 = DynamicField.DynamicField([[4],[6],[10]], [], None)
 
 
     scaler = DynamicField.Scaler()
 
 #    weight = DynamicField.Weight([0., 0.5, 1.0, 0.5, 0.0])
-    weight = DynamicField.Weight(5.)
+#    weight = DynamicField.Weight(5.)
 
     projection_0 = DynamicField.Projection(2, 2, set([0,1]), [1,0])
 

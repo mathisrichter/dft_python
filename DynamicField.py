@@ -3,7 +3,7 @@ import random
 import Kernel
 import numpy
 import copy
-from scipy.interpolate import griddata
+import scipy.interpolate
 
 def sigmoid(x, beta, x0):
     return 1./ (1. + numpy.exp(-beta * (x - x0)))
@@ -38,7 +38,7 @@ def connect(source, target, processing_steps):
     expanding_projection_indeces = []
     compressing_projection_indeces = []
     scaler_indeces = []
-    for i in xrange(len(processing_steps)):
+    for i in range(len(processing_steps)):
         if (isinstance(processing_steps[i], Scaler)):
             scaler_indeces.append(i)
         if (isinstance(processing_steps[i], Projection)):
@@ -90,7 +90,7 @@ def connect(source, target, processing_steps):
     connectables.insert(0, source)
     connectables.append(target)
 
-    for i in xrange(len(connectables)-1):
+    for i in range(len(connectables)-1):
         # check that the dimensionalities match pairwise in the sequence of connectables
         current_output_dimensionality = connectables[i].get_output_dimensionality()
         next_input_dimensionality = connectables[i+1].get_input_dimensionality()
@@ -280,15 +280,15 @@ class DynamicField(Connectable):
             dimension_sizes = [1]
 
         # compute the discrete dimension sizes from the bounds and resolution of each dimension
-        for i in xrange(len(self._dimension_bounds)):
+        for i in range(len(self._dimension_bounds)):
             if (len(self._dimension_bounds[i]) != 2):
                 if (len(self._dimension_bounds[i]) == 1):
                     self._dimension_bounds[i].insert(0, 0)
-                    print """Warning. You only supplied a single bound for a
+                    print("""Warning. You only supplied a single bound for a
                           dimension. Since a minimum and a maximum value are
                           expected, the value you supplied is interpreted as
                           the maximum. The minimum is set to zero. Please
-                          supply a tuple if you did not intend for this."""
+                          supply a tuple if you did not intend for this.""")
                 else:
                     raise ConnectError("""At least one of the field's dimension
                                        bounds does not have exactly two values.
@@ -488,14 +488,14 @@ class ProcessingGroup(Connectable):
             connect(self, self._processing_steps[0])
             connect(self._processing_steps[-1], self)
 
-        for step_index in xrange(number_of_steps):
+        for step_index in range(number_of_steps):
             if step_index + 1 < number_of_steps:
                 connect(self._processing_steps[step_index], self._processing_steps[step_index + 1])
 
     
     def disconnect_group(self):
         number_of_steps = len(self._processing_steps)
-        for step_index in xrange(number_of_steps):
+        for step_index in range(number_of_steps):
             if step_index + 1 < number_of_steps:
                 disconnect(self._processing_steps[step_index], self._processing_steps[step_index + 1])
 
@@ -548,56 +548,41 @@ class Scaler(ProcessingStep):
         input = copy.copy(self._incoming_connectables[0].get_output())
 
         if (input.ndim == 0):
-            self._output_buffer = input
-        if (input.ndim == 1):
-            self._interpolate2_1D(input, self._output_dimension_sizes)
-        elif (input.ndim == 2):
-            self._interpolate_2D(input, self._output_dimension_sizes)
-
-    def _interpolate2(self, activation, dimension_sizes):
-        pass
-        
-
-    def _interpolate(self, activation, dimension_sizes):
-        if (len(dimension_sizes) > 1):
-            print("dim > 1")
-            print(dimension_sizes)
-            interpolated_activation = numpy.zeros(dimension_sizes)
-            for i in xrange(len(interpolated_activation)):
-                interpolated_activation[i] = self._interpolate(activation[1:], dimension_sizes[1:])
-
-            return interpolated_activation
+            self._interpolate_0d(input)
+        elif (input.ndim == 1):
+            self._interpolate_1d(input)
         else:
-            print("dim 1")
-            print(dimension_sizes)
-            xp = xrange(len(activation))
-            return numpy.interp(numpy.arange(0,
-                                len(xp),
-                                float(len(xp))/float(dimension_sizes[0])),
-                                xp,
-                                activation)
+            self._interpolate_nd_linear(input, input.ndim)
 
-    def _interpolate2_1D(self, activation, dimension_size):
-        number_of_steps = complex(0, float(len(activation)) / float(self._output_dimension_sizes[0]))
-        grid = numpy.mgrid[0:len(activation):number_of_steps]
-        self._output_buffer = griddata(xrange(len(activation)), activation, grid, method='linear')
+    def _interpolate_0d(self, activation):
+        self._output_buffer = activation
 
-    def _interpolate_1D(self, activation, dimension_size):
-        xp = xrange(len(activation))
+    def _interpolate_1d(self, activation):
+        x = range(len(activation))
+        f = scipy.interpolate.interp1d(x, activation)
 
-        print("dim sizes" + str(self._output_dimension_sizes))
-        self._output_buffer = numpy.interp(
-                                numpy.arange(0,
-                                len(xp),
-                                float(len(xp))/float(self._output_dimension_sizes[0])),
-                                xp,
-                                activation)
+        number_of_steps = complex(0, self._output_dimension_sizes[0])
+        grid = numpy.mgrid[0:len(activation)-1:number_of_steps]
 
-    def _interpolate_2D(self, activation, new_dimension_sizes):
+        self._output_buffer = f(grid)
+
+    def _interpolate_2d_spline(self, activation):
+        x, y = numpy.mgrid[0:activation.shape[0], 0:activation.shape[1]]
+        spline_rep = scipy.interpolate.bisplrep(x, y, activation, s=0)
+
+        number_of_steps = [complex(0, self._output_dimension_sizes[0]),
+                           complex(0, self._output_dimension_sizes[1])]
+
+        x_new, y_new = numpy.mgrid[0:activation.shape[0]-1:number_of_steps[0],
+                                   0:activation.shape[1]-1:number_of_steps[1]]
+
+        self._output_buffer = scipy.interpolate.bisplev(x_new[:,0], y_new[0,:], spline_rep)
+
+    def _interpolate_2d_linear_custom(self, activation):
         old_dim0_size = len(activation)
-        tmp = numpy.zeros((old_dim0_size, new_dimension_sizes[1]))
-        xp0 = xrange(len(activation[0]))
-        for i in xrange(old_dim0_size):
+        tmp = numpy.zeros((old_dim0_size, self._output_dimension_sizes[1]))
+        xp0 = range(len(activation[0]))
+        for i in range(old_dim0_size):
             tmp[i] = numpy.interp(numpy.arange(0,
                                   len(xp0),
                                   float(len(xp0))/float(self._output_dimension_sizes[1])),
@@ -608,8 +593,8 @@ class Scaler(ProcessingStep):
 
         old_dim0_size = len(tmp)
         self._output_buffer = numpy.zeros((self._output_dimension_sizes[1], self._output_dimension_sizes[0]))
-        xp0 = xrange(len(tmp[0]))
-        for i in xrange(old_dim0_size): 
+        xp0 = range(len(tmp[0]))
+        for i in range(old_dim0_size): 
             self._output_buffer[i] = numpy.interp(numpy.arange(0,
                                                   len(xp0),
                                                   float(len(xp0))/float(self._output_dimension_sizes[0])),
@@ -617,6 +602,13 @@ class Scaler(ProcessingStep):
                                                   tmp[i])
         self._output_buffer = self._output_buffer.transpose()
 
+    def _interpolate_nd_linear(self, activation, dimensionality):
+        coord_ranges = [range(activation.shape[i]) for i in range(dimensionality)]
+        linear_interpolator = scipy.interpolate.LinearNDInterpolator(cartesian(coord_ranges), activation.flatten())
+
+        coord_ranges_new = [numpy.linspace(0, activation.shape[i]-1, num=self._output_dimension_sizes[i]) for i in range(dimensionality)]
+        x_new = cartesian(coord_ranges_new)
+        self._output_buffer = linear_interpolator(x_new).reshape(self._output_dimension_sizes)
 
     def determine_output_dimension_sizes(self):
         pass
@@ -659,8 +651,8 @@ class Projection(ProcessingStep):
             
         if (self._input_dimensionality == self._output_dimensionality):
             if (self._input_dimensions == self._output_dimensions):
-                print """Warning. You have created a projection processing step that neither changes the dimensionality,
-                       nor reorders the dimension indices and thus does nothing but waste processing power. :)"""
+                print("""Warning. You have created a projection processing step that neither changes the dimensionality,
+                       nor reorders the dimension indices and thus does nothing but waste processing power. :)""")
 
         self._projection_compresses = False
         self._projection_expands = False
@@ -727,7 +719,7 @@ class Projection(ProcessingStep):
         input = self._incoming_connectables[0].get_output()
 
         if (self._projection_compresses):
-            for i in xrange(len(self._dimensions_to_compress)):
+            for i in range(len(self._dimensions_to_compress)):
                 input = input.max(self._dimensions_to_compress[i] - i)
         elif (self._projection_expands):
             self._output_buffer = self._expand_method(input)
@@ -781,7 +773,7 @@ class Projection(ProcessingStep):
             transpose = True
             output = numpy.transpose(output)
 
-        for i in xrange(len(output)):
+        for i in range(len(output)):
             output[i] = input
 
         if (transpose):
@@ -799,10 +791,10 @@ class Projection(ProcessingStep):
         first_dimension_size = self._output_dimension_sizes[self._transpose_permutation[2]]
 
         two_dim_activation = numpy.zeros((second_dimension_size, first_dimension_size))
-        for i in xrange(len(two_dim_activation)):
+        for i in range(len(two_dim_activation)):
             two_dim_activation[i] = input
 
-        for i in xrange(len(output)):
+        for i in range(len(output)):
             output[i] = two_dim_activation
 
         if (self._transpose_permutation is not None):
@@ -816,7 +808,7 @@ class Projection(ProcessingStep):
         if (self._transpose_permutation is not None):
             output = numpy.transpose(output, self._transpose_permutation)
 
-        for i in xrange(len(output)):
+        for i in range(len(output)):
             output[i] = input
 
         if (self._transpose_permutation is not None):
@@ -830,4 +822,56 @@ class Projection(ProcessingStep):
             inverse_permutation.append(permutation.index(i))
 
         return inverse_permutation
+
+def cartesian(arrays, out=None):
+    """
+    Generate a cartesian product of input arrays.
+
+    Parameters
+    ----------
+    arrays : list of array-like
+        1-D arrays to form the cartesian product of.
+    out : ndarray
+        Array to place the cartesian product in.
+
+    Returns
+    -------
+    out : ndarray
+        2-D array of shape (M, len(arrays)) containing cartesian products
+        formed of input arrays.
+
+    Examples
+    --------
+    >>> cartesian(([1, 2, 3], [4, 5], [6, 7]))
+    array([[1, 4, 6],
+           [1, 4, 7],
+           [1, 5, 6],
+           [1, 5, 7],
+           [2, 4, 6],
+           [2, 4, 7],
+           [2, 5, 6],
+           [2, 5, 7],
+           [3, 4, 6],
+           [3, 4, 7],
+           [3, 5, 6],
+           [3, 5, 7]])
+
+    http://stackoverflow.com/questions/1208118/using-numpy-to-build-an-array-of-all-combinations-of-two-arrays
+    """
+
+    arrays = [numpy.asarray(x) for x in arrays]
+    dtype = arrays[0].dtype
+
+    n = numpy.prod([x.size for x in arrays])
+    if out is None:
+        out = numpy.zeros([n, len(arrays)], dtype=dtype)
+
+    m = n / arrays[0].size
+    out[:,0] = numpy.repeat(arrays[0], m)
+    if arrays[1:]:
+        cartesian(arrays[1:], out=out[0:m,1:])
+        for j in range(1, arrays[0].size):
+            out[j*m:(j+1)*m,1:] = out[0:m,1:]
+    return out
+
 
