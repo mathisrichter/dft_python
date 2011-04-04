@@ -14,7 +14,7 @@ class ConnectError(Exception):
     def __str__(self):
         return repr(self.value)
 
-def connect(source, target, processing_steps):
+def connect(source, target, processing_steps=[]):
     # get dimensionality and dimension sizes of source
     source_output_dimensionality = source.get_output_dimensionality()
     source_output_dimension_sizes = source.get_output_dimension_sizes()
@@ -180,7 +180,7 @@ class Connectable:
         # list of connected objects that receive input from this connectable (outgoing)
         self._outgoing_connectables = []
         # the buffer for the output
-        self._output_buffer = None
+        self._output_buffer = 0.0
         
         # dimensionality of the input
         self._input_dimensionality = None
