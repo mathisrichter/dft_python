@@ -108,55 +108,29 @@ def connect(source, target, processing_steps=[]):
     i = 0
     j = len(connectables) - 1
     while (i < j):
-#        print("i: " + str(i))
-
         current_input_dimension_sizes = connectables[i].get_input_dimension_sizes()
         current_output_dimension_sizes = connectables[i].get_output_dimension_sizes()
 
         if (current_input_dimension_sizes is not None):
-#            print("input dim sizes NOT none")
             if (current_output_dimension_sizes is None):
-#                print("determining output size for i: " + connectables[i].get_name() + " (" + str(i) + ")")
                 connectables[i].determine_output_dimension_sizes()
 
             current_output_dimension_sizes = connectables[i].get_output_dimension_sizes()
             if (current_output_dimension_sizes is not None):
                 connectables[i+1].set_input_dimension_sizes(current_output_dimension_sizes)
                 i = i + 1
-#        else:
-#            print("input dim sizes ARE none")
-
-#        print("j: " + str(j))
         current_output_dimension_sizes = connectables[j].get_output_dimension_sizes()
         current_input_dimension_sizes = connectables[j].get_input_dimension_sizes()
 
         if (current_output_dimension_sizes is not None):
-#            print("output dim sizes NOT none")
             if (current_input_dimension_sizes is None):
-#                print("determining input size for j: " + connectables[j].get_name() + " (" + str(j) + ")")
                 connectables[j].determine_input_dimension_sizes()
 
             current_input_dimension_sizes = connectables[j].get_input_dimension_sizes()
             if (current_input_dimension_sizes is not None):
                 connectables[j-1].set_output_dimension_sizes(current_input_dimension_sizes)       
                 j = j - 1
-#        else:
-#            print("output dim sizes ARE none")
-
-
-#    for connectable in connectables:
-#        print("connectable: " + connectable.get_name())
-#        if (connectable.get_input_dimension_sizes() is None):
-#            print("  input: dimension sizes are none.")
-#        else:
-#            print("  input: passed.")
-#            print("  " + str(connectable.get_input_dimension_sizes()))
-#        if (connectable.get_output_dimension_sizes() is None):
-#            print("  output: dimension sizes are none.")
-#        else:
-#            print("  output: passed.")
-#            print("  " + str(connectable.get_output_dimension_sizes()))
-    
+   
 def disconnect(source, target):
     source.get_outgoing_connectables().remove(target)
     target.get_incoming_connectables().remove(source)
@@ -171,6 +145,7 @@ class Connectable:
     def __init__(self):
         # unique ID of the connectable
         self._id = Connectable._instance_counter
+        Connectable._instance_counter += 1
 
         # name of the connectable
         self._name = ""
