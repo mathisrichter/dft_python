@@ -217,6 +217,14 @@ class Connectable:
     def determine_input_dimension_sizes(self):
         self._input_dimension_sizes = self._output_dimension_sizes
 
+    def new_input(self):
+        self.step()
+
+    def step(self):
+        self._step_computation()
+        for connectable in self._outgoing_connectables:
+            connectable.new_input()
+
 class DynamicField(Connectable):
     "Dynamic field"
 
@@ -420,7 +428,7 @@ class DynamicField(Connectable):
 
         return change
     
-    def step(self):
+    def _step_computation(self):
         """Compute the current change of the system and change to current value
         accordingly."""
         self._activation += self.get_change(self._activation) + self._noise_strength * (random.random() - 0.5)
@@ -428,8 +436,8 @@ class DynamicField(Connectable):
 
     def start_activation_log(self, file_name):
         """Opens the file with the supplied file name. Once there is an open
-        file handle, the step() method will write the current activation of the
-        field to the file."""
+        file handle, the _step_computation() method will write the current
+        activation of the field to the file."""
         self._activation_log_file = open(file_name, 'a')
 
     def stop_activation_log(self):
@@ -442,6 +450,9 @@ class DynamicField(Connectable):
         if self._activation_log_file != None:
             self._activation.tofile(self._activation_log_file, sep=', ')
             self._activation_log_file.write('\n')
+
+    def new_input(self):
+        pass
 
 
 class ProcessingGroup(Connectable):
@@ -479,27 +490,17 @@ class ProcessingGroup(Connectable):
             processing_step.step()
 
 
-class ProcessingStep(Connectable):
-    "Processing step"
-
-    def __init__(self):
-        Connectable.__init__(self)
-
-    def step(self):
-        pass
-
-
-class Weight(ProcessingStep):
+class Weight(Connectable):
     "Each input is multiplied with a weight and stored in the corresponding output buffer."
 
     def __init__(self, weight):
-        ProcessingStep.__init__(self)
+        Connectable.__init__(self)
         self._weight = weight
 
         # name of the field
         self._name = "weight" + str(self._id)
 
-    def step(self):
+    def _step_computation(self):
         self._output_buffer = self._incoming_connectables[0].get_output() * self._weight
     
     def get_weight(self):
@@ -509,17 +510,17 @@ class Weight(ProcessingStep):
         self._weight = weight
 
 
-class Scaler(ProcessingStep):
+class Scaler(Connectable):
     """The input is somehow mapped onto an output with different dimension sizes but the same dimensionality.
     This can be done by interpolation, cropping, or padding."""
 
     def __init__(self):
-        ProcessingStep.__init__(self)
+        Connectable.__init__(self)
 
         # name of the scaler
         self._name = "scaler" + str(self._id)
 
-    def step(self):
+    def _step_computation(self):
         input = copy.copy(self._incoming_connectables[0].get_output())
 
         if (input.ndim == 0):
@@ -592,11 +593,11 @@ class Scaler(ProcessingStep):
         pass
        
 
-class Projection(ProcessingStep):
+class Projection(Connectable):
     "Projection of an input onto an output of a different dimensionality."
     
     def __init__(self, input_dimensionality, output_dimensionality, input_dimensions=set(), output_dimensions=[]):
-        ProcessingStep.__init__(self)
+        Connectable.__init__(self)
         self._input_dimensionality = input_dimensionality
         self._output_dimensionality = output_dimensionality
         self._input_dimensions = input_dimensions
@@ -690,7 +691,7 @@ class Projection(ProcessingStep):
                                        something other than 3D. This is not yet supported.""")
         
 
-    def step(self):
+    def _step_computation(self):
         input = self._incoming_connectables[0].get_output()
 
         if (self._projection_compresses):
