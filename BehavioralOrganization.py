@@ -21,7 +21,7 @@ def precondition(first_behavior, later_behavior, task_node):
     precondition_inhibition_weight = DynamicField.Weight(-5.5)
     DynamicField.connect(precondition_inhibition_node, precondition_node, [precondition_inhibition_weight])
 
-    intention_inhibition_weight = DynamicField.Weight(-5.5)
+    intention_inhibition_weight = DynamicField.Weight(-6.5)
     DynamicField.connect(precondition_node, later_behavior.get_intention_node(), [intention_inhibition_weight])
 
     return precondition_node
@@ -29,14 +29,14 @@ def precondition(first_behavior, later_behavior, task_node):
 def competition(behavior_0, behavior_1, task_node, bidirectional=False):
     competition_nodes = []
     competition_node_01_kernel = Kernel.BoxKernel()
-    competition_node_01_kernel.set_amplitude(2.5)
+    competition_node_01_kernel.set_amplitude(1.5)
     competition_node_01 = DynamicField.DynamicField([], [], competition_node_01_kernel)
     competition_nodes.append(competition_node_01)
 
-    competition_node_01_weight = DynamicField.Weight(5.5)
+    competition_node_01_weight = DynamicField.Weight(2.5)
     DynamicField.connect(task_node, competition_node_01, [competition_node_01_weight])
 
-    competition_01_excitation_weight = DynamicField.Weight(5.5)
+    competition_01_excitation_weight = DynamicField.Weight(2.5)
     DynamicField.connect(behavior_0.get_intention_node(), competition_node_01, [competition_01_excitation_weight])
 
     intention_1_inhibition_weight = DynamicField.Weight(-5.5)
@@ -46,14 +46,14 @@ def competition(behavior_0, behavior_1, task_node, bidirectional=False):
 
     if (bidirectional is True):
         competition_node_10_kernel = Kernel.BoxKernel()
-        competition_node_10_kernel.set_amplitude(2.5)
+        competition_node_10_kernel.set_amplitude(1.5)
         competition_node_10 = DynamicField.DynamicField([], [], competition_node_10_kernel)
         competition_nodes.append(competition_node_10)
 
-        competition_node_10_weight = DynamicField.Weight(5.5)
+        competition_node_10_weight = DynamicField.Weight(2.5)
         DynamicField.connect(task_node, competition_node_10, [competition_node_10_weight])
 
-        competition_10_excitation_weight = DynamicField.Weight(5.5)
+        competition_10_excitation_weight = DynamicField.Weight(2.5)
         DynamicField.connect(behavior_1.get_intention_node(), competition_node_10, [competition_10_excitation_weight])
 
         intention_0_inhibition_weight = DynamicField.Weight(-5.5)
@@ -80,6 +80,7 @@ class ElementaryBehavior:
                  field_sizes,
                  field_resolutions,
                  int_node_to_int_field_weight,
+                 int_field_to_cos_field_weight,
                  cos_field_to_cos_node_weight,
                  cos_node_to_cos_memory_node_weight,
                  int_inhibition_weight,
@@ -96,6 +97,7 @@ class ElementaryBehavior:
 
         # connectables that describe weights between different nodes/fields
         self._int_node_to_int_field_weight = DynamicField.Weight(int_node_to_int_field_weight)
+        self._int_field_to_cos_field_weight = DynamicField.Weight(int_field_to_cos_field_weight)
         self._cos_field_to_cos_node_weight = DynamicField.Weight(cos_field_to_cos_node_weight)
         self._cos_node_to_cos_memory_node_weight = DynamicField.Weight(cos_node_to_cos_memory_node_weight)
         self._int_inhibition_weight = DynamicField.Weight(int_inhibition_weight)
@@ -153,7 +155,7 @@ class ElementaryBehavior:
         DynamicField.connect(self._intention_node, self._intention_field, intention_processing_steps)
 
         # connect intention field to cos field
-        DynamicField.connect(self._intention_field, self._cos_field)
+        DynamicField.connect(self._intention_field, self._cos_field, [self._int_field_to_cos_field_weight])
 
         # connect cos field to cos node
         self._cos_projection = DynamicField.Projection(self._field_dimensionality, 0, set([]), [])

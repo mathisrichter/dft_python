@@ -4,6 +4,7 @@ import numpy
 import math
 import matplotlib.pyplot as plt
 from enthought.mayavi import mlab
+import plot_settings
 
 def main():
     task_node = DynamicField.DynamicField([], [], None)
@@ -23,8 +24,9 @@ def main():
                                                 field_sizes=[[50],[50]],
                                                 field_resolutions=[],
                                                 int_node_to_int_field_weight=int_weight,
-                                                cos_field_to_cos_node_weight=6.0,
-                                                cos_node_to_cos_memory_node_weight=6.0,
+                                                int_field_to_cos_field_weight=3.5,
+                                                cos_field_to_cos_node_weight=5.5,
+                                                cos_node_to_cos_memory_node_weight=2.5,
                                                 int_inhibition_weight=-6.0,
                                                 reactivating=False)
 
@@ -32,9 +34,10 @@ def main():
                                                 field_sizes=[[5],[3]],
                                                 field_resolutions=[],
                                                 int_node_to_int_field_weight=5.5,
+                                                int_field_to_cos_field_weight=3.5,
                                                 cos_field_to_cos_node_weight=5.5,
-                                                cos_node_to_cos_memory_node_weight=5.5,
-                                                int_inhibition_weight=-5.5,
+                                                cos_node_to_cos_memory_node_weight=2.5,
+                                                int_inhibition_weight=-6.0,
                                                 reactivating=False)
 
     BehOrg.connect_to_task(task_node, elem_behavior_0)
@@ -42,7 +45,7 @@ def main():
 
     competition_nodes = BehOrg.competition(elem_behavior_0, elem_behavior_1, task_node, bidirectional=True)
 
-    time_steps = 750
+    time_steps = 1200
 
     task_node_activation = [0] * time_steps
     eb0_intention_node_activation = [0] * time_steps
@@ -64,11 +67,13 @@ def main():
     for i in range(time_steps):
 
         if (i > 20):
-            task_node.set_boost(20)
+            task_node.set_boost(11)
         if (i > 200):
-            elem_behavior_0.get_cos_field().set_boost(5.5)
+            elem_behavior_0.get_cos_field().set_boost(1.5)
         if (i > 400):
             elem_behavior_0.get_cos_field().set_boost(0.0)
+        if (i > 600):
+            elem_behavior_1.get_cos_field().set_boost(1.5)
         task_node.step()
         elem_behavior_0.step()
         competition_nodes[0].step()
@@ -100,7 +105,7 @@ def main():
         competition_node_01_activation[i] = competition_nodes[0].get_activation()[0]
         #print(competition_node_01_activation[i])
         #print("competition node 10 activation")
-        competition_node_10_activation[i] = competition_nodes[0].get_activation()[0]
+        competition_node_10_activation[i] = competition_nodes[1].get_activation()[0]
         #print(competition_nodes[1].get_activation())
         #print("")
 
@@ -123,6 +128,9 @@ def main():
 
         #print("\n----------------------------------------------------\n")
 
+    plot_settings.set_mode("default")
+    plt.figure(1)
+    plt.axes([0.125,0.2,0.95-0.125,0.95-0.3])
     plt.plot(task_node_activation, label='task')
     plt.plot(eb0_intention_node_activation, label='eb0 int')
     plt.plot(eb0_cos_node_activation, label='eb0 cos')
@@ -133,8 +141,10 @@ def main():
     plt.plot(competition_node_01_activation, label='comp 01')
     plt.plot(competition_node_10_activation, label='comp 10')
     plt.xlabel("time steps")
-    plt.ylabel("activation")
+    plt.ylabel("activation $u$")
+    plt.title("Competing elementary behaviors")
     plt.legend(loc='upper right')
+    plt.savefig("competition_plot.eps")
     plt.show()
 
     act = eb0_intention_field_activation[500]

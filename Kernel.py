@@ -106,7 +106,7 @@ class BoxKernel(Kernel):
         Kernel.__init__(self, 1)
         self._dimensionality = dimensionality
         self._amplitude = 5.0
-        self._kernel = numpy.ones(shape=(1)) * self._amplitude
+        self._compute_kernel()
     
     def get_separated_kernel_parts(self, dimension_index):
         return self._kernel
@@ -116,6 +116,11 @@ class BoxKernel(Kernel):
     
     def set_amplitude(self, amplitude):
         self._amplitude = amplitude        
+        self._compute_kernel()
+
+    def _compute_kernel(self):
+        self._kernel = numpy.ones(shape=(1)) * self._amplitude
+        
 
 
 class GaussKernel(Kernel):
