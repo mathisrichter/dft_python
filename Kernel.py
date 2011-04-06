@@ -102,9 +102,9 @@ class Kernel:
 class BoxKernel(Kernel):
     "n-dimensional box kernel"
     
-    def __init__(self, dimensionality=None):
+    def __init__(self, dimensionality=1):
         Kernel.__init__(self, 1)
-        self._dimensionality = 1
+        self._dimensionality = dimensionality
         self._amplitude = 5.0
         self._kernel = numpy.ones(shape=(1)) * self._amplitude
     

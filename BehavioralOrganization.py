@@ -4,9 +4,12 @@ import Kernel
 import numpy
 import copy
 import DynamicField
+import Kernel
 
 def precondition(first_behavior, later_behavior, task_node):
-    precondition_node = DynamicField.DynamicField([], [], None)
+    precondition_node_kernel = Kernel.BoxKernel()
+    precondition_node_kernel.set_amplitude(2.5)
+    precondition_node = DynamicField.DynamicField([], [], precondition_node_kernel)
 
     precondition_node_weight = DynamicField.Weight(5.5)
     DynamicField.connect(task_node, precondition_node, [precondition_node_weight])
@@ -21,8 +24,14 @@ def precondition(first_behavior, later_behavior, task_node):
     intention_inhibition_weight = DynamicField.Weight(-5.5)
     DynamicField.connect(precondition_node, later_behavior.get_intention_node(), [intention_inhibition_weight])
 
+    return precondition_node
+
 def competition(behavior_0, behavior_1, task_node, bidirectional=False):
-    competition_node_01 = DynamicField.DynamicField([], [], None)
+    competition_nodes = []
+    competition_node_01_kernel = Kernel.BoxKernel()
+    competition_node_01_kernel.set_amplitude(2.5)
+    competition_node_01 = DynamicField.DynamicField([], [], competition_node_01_kernel)
+    competition_nodes.append(competition_node_01)
 
     competition_node_01_weight = DynamicField.Weight(5.5)
     DynamicField.connect(task_node, competition_node_01, [competition_node_01_weight])
@@ -36,7 +45,10 @@ def competition(behavior_0, behavior_1, task_node, bidirectional=False):
     competition_node_10 = None
 
     if (bidirectional is True):
-        competition_node_01 = DynamicField.DynamicField([], [], None)
+        competition_node_10_kernel = Kernel.BoxKernel()
+        competition_node_10_kernel.set_amplitude(2.5)
+        competition_node_10 = DynamicField.DynamicField([], [], competition_node_10_kernel)
+        competition_nodes.append(competition_node_10)
 
         competition_node_10_weight = DynamicField.Weight(5.5)
         DynamicField.connect(task_node, competition_node_10, [competition_node_10_weight])
@@ -52,6 +64,8 @@ def competition(behavior_0, behavior_1, task_node, bidirectional=False):
         
         DynamicField.connect(competition_node_01, competition_node_10, [competition_10_inhibition_weight])
         DynamicField.connect(competition_node_10, competition_node_01, [competition_01_inhibition_weight])
+
+    return competition_nodes
 
 def connect_to_task(task, behavior):
     intention_weight = DynamicField.Weight(5.5)
@@ -87,7 +101,8 @@ class ElementaryBehavior:
         self._int_inhibition_weight = DynamicField.Weight(int_inhibition_weight)
 
         # intention node and its kernel
-        self._intention_node_kernel = None
+        self._intention_node_kernel = Kernel.BoxKernel()
+        self._intention_node_kernel.set_amplitude(2.5)
         self._intention_node = DynamicField.DynamicField([], [], self._intention_node_kernel)
         # intention field and its kernel
         self._intention_field_kernel = Kernel.GaussKernel(self._field_dimensionality)
@@ -96,7 +111,8 @@ class ElementaryBehavior:
         self._intention_field_kernel.calculate()
         self._intention_field = DynamicField.DynamicField(field_sizes, field_resolutions, self._intention_field_kernel)
         # CoS node and its kernel
-        self._cos_node_kernel = None
+        self._cos_node_kernel = Kernel.BoxKernel()
+        self._cos_node_kernel.set_amplitude(2.5)
         self._cos_node = DynamicField.DynamicField([], [], self._cos_node_kernel)
         # CoS field and its kernel
         self._cos_field_kernel = Kernel.GaussKernel(self._field_dimensionality)
@@ -105,7 +121,8 @@ class ElementaryBehavior:
         self._cos_field_kernel.calculate()
         self._cos_field = DynamicField.DynamicField(field_sizes, field_resolutions, self._cos_field_kernel)
         # CoS memory node and its kernel
-        self._cos_memory_node_kernel = None
+        self._cos_memory_node_kernel = Kernel.BoxKernel()
+        self._cos_memory_node_kernel.set_amplitude(4.5)
         self._cos_memory_node = DynamicField.DynamicField([], [], self._cos_memory_node_kernel)
 
         # connect all connectables in this elementary behavior
