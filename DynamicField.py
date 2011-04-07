@@ -696,7 +696,9 @@ class Projection(Connectable):
 
         if (self._projection_compresses):
             for i in range(len(self._dimensions_to_compress)):
-                input = input.max(self._dimensions_to_compress[i] - i)
+                input = input.sum(self._dimensions_to_compress[i] - i)
+            input = sigmoid(input, 5.0, 0.0)
+                
         elif (self._projection_expands):
             self._output_buffer = self._expand_method(input)
 
