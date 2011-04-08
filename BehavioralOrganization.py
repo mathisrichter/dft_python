@@ -112,6 +112,7 @@ class ElementaryBehavior:
         self._intention_field_kernel.add_mode(-5.5, [5.5] * self._field_dimensionality, [0.0] * self._field_dimensionality)
         self._intention_field_kernel.calculate()
         self._intention_field = DynamicField.DynamicField(field_sizes, field_resolutions, self._intention_field_kernel)
+        self._intention_field.set_global_inhibition(0.5)
         # CoS node and its kernel
         self._cos_node_kernel = Kernel.BoxKernel()
         self._cos_node_kernel.set_amplitude(2.5)
@@ -122,6 +123,7 @@ class ElementaryBehavior:
         self._cos_field_kernel.add_mode(-5.5, [5.5] * self._field_dimensionality, [0.0] * self._field_dimensionality)
         self._cos_field_kernel.calculate()
         self._cos_field = DynamicField.DynamicField(field_sizes, field_resolutions, self._cos_field_kernel)
+        self._cos_field.set_global_inhibition(0.5)
         # CoS memory node and its kernel
         self._cos_memory_node_kernel = Kernel.BoxKernel()
         self._cos_memory_node_kernel.set_amplitude(4.5)

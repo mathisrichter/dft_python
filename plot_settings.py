@@ -14,11 +14,11 @@ lps = [k+'-' for k in [',','.','o','^','v','<','>','s','+','x','D','d','1','2','
 colors= ['b','g','r','c','m','y','k','w']
 
 def get_figsize(fig_width_pt):
-    inches_per_pt = 1.0/72.0                # Convert pt to inch
+    inches_per_pt = 1.0/72.27               # Convert pt to inch
     golden_mean = (math.sqrt(5)-1.0)/2.0    # Aesthetic ratio
     fig_width = fig_width_pt*inches_per_pt  # width in inches
     fig_height = fig_width*golden_mean      # height in inches
-    fig_size =  [fig_width,fig_height]      # exact figsize
+    fig_size = [fig_width,fig_height]      # exact figsize
     return fig_size
 
 # Publishable quality image settings for 2-column papers
@@ -34,6 +34,17 @@ params0 = {'backend': 'eps',
           'text.usetex': True,
           'figure.figsize': get_figsize(250)}
 
+params_icdl = {'backend': 'eps',
+          'axes.labelsize': 10,
+          'text.fontsize': 10,
+          'xtick.labelsize': 10,
+          'ytick.labelsize': 10,
+          'legend.pad': 0.1,     # empty space around the legend box
+          'legend.fontsize': 8,
+          'lines.markersize': 3,
+          'font.size': 10,
+          'text.usetex': True}
+
 # Medium sized images
 params1 = {'backend': 'eps',
           'axes.labelsize': 8,
@@ -45,7 +56,7 @@ params1 = {'backend': 'eps',
           'lines.markersize': 3,
           'font.size': 8,
           'text.usetex': True,
-          'figure.figsize': get_figsize(500)}
+          'figure.figsize': get_figsize(516)}
 
 # Large images (default)
 params2 = {'backend': 'eps',
@@ -65,6 +76,8 @@ def set_mode(mode):
         pylab.rcParams.update(params0)
     elif mode == "medium":
         pylab.rcParams.update(params1)
+    elif mode == "icdl":
+        pylab.rcParams.update(params_icdl)
     else:
         pylab.rcParams.update(params2)
 

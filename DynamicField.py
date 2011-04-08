@@ -291,6 +291,8 @@ class DynamicField(Connectable):
         self._noise_strength = 0.05
         # value the activation will relax to without external input
         self._resting_level = -5.0
+        # inhibition of the entire field
+        self._global_inhibition = 0.0
         # input that comes from outside the system and can be used to drive the
         # field through the detection instability
         self._boost = 0.0
@@ -360,6 +362,12 @@ class DynamicField(Connectable):
     def set_boost(self, boost):
         self._boost = boost
 
+    def get_global_inhibition(self):
+        return self._global_inhibition
+
+    def set_global_inhibition(self, global_inhibition):
+        self._global_inhibition = global_inhibition
+
     def get_activation(self):
         return self._activation
 
@@ -419,10 +427,13 @@ class DynamicField(Connectable):
         for connectable in self.get_incoming_connectables():
             field_interaction += connectable.get_output()
 
+        global_inhibition = self._global_inhibition * sigmoid(activation, 5.0, 0.0).sum() / sum(self._output_dimension_sizes)
+
         # compute the change of the system
         change = relaxation_time_factor * (- activation
                      + self._resting_level
                      + self._boost
+                     - global_inhibition
                      + self._lateral_interaction
                      + field_interaction)
 
