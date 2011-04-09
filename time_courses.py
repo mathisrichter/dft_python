@@ -8,30 +8,18 @@ from enthought.mayavi import mlab
 from mpl_toolkits.axes_grid import ImageGrid
 from mpl_toolkits.axes_grid import make_axes_locatable
 import plot_settings
+import math_tools
 
-def gauss_2d(sizes, amplitude, sigmas, shifts):
-    assert len(sizes) == 2, "The sizes variable has to contain exactly two values."
-    assert len(sigmas) == 2, "The sigmas variable has to contain exactly two values."
-    assert len(shifts) == 2, "The shifts variable has to contain exactly two values."
-    
-    gauss = numpy.zeros(sizes)
-    for i in range(sizes[0]):
-        for j in range(sizes[1]):
-            gauss[i][j] = amplitude * math.exp(- (math.pow(i - shifts[0], 2.0)/(2*math.pow(sigmas[0], 2.0)) + math.pow(j - shifts[1], 2.0)/(2*math.pow(sigmas[1], 2.0))))
-
-    return gauss
-
-    
 
 def main():
     task_node = DynamicField.DynamicField([], [], None)
 
     field_sizes = [80, 80]
 
-    int_weight_0 = gauss_2d(field_sizes, amplitude=10, sigmas=[5.0, 5.0], shifts=[20, 20])
-    int_weight_1 = gauss_2d(field_sizes, amplitude=10, sigmas=[5.0, 5.0], shifts=[40, 50])
+    int_weight_0 = math_tools.gauss_2d(field_sizes, amplitude=10, sigmas=[5.0, 5.0], shifts=[20, 20])
+    int_weight_1 = math_tools.gauss_2d(field_sizes, amplitude=10, sigmas=[5.0, 5.0], shifts=[40, 50])
 
-    elem_behavior_0 = BehOrg.ElementaryBehavior(field_dimensionality=2,
+    elem_behavior_0 = BehOrg.ElementaryBehavior.with_internal_fields(field_dimensionality=2,
                                                 field_sizes=[[field_sizes[0]],[field_sizes[1]]],
                                                 field_resolutions=[],
                                                 int_node_to_int_field_weight=int_weight_0,
@@ -41,7 +29,7 @@ def main():
                                                 int_inhibition_weight=-6.0,
                                                 reactivating=False)
 
-    elem_behavior_1 = BehOrg.ElementaryBehavior(field_dimensionality=2,
+    elem_behavior_1 = BehOrg.ElementaryBehavior.with_internal_fields(field_dimensionality=2,
                                                 field_sizes=[[field_sizes[0]],[field_sizes[1]]],
                                                 field_resolutions=[],
                                                 int_node_to_int_field_weight=int_weight_1,

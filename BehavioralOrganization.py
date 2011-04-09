@@ -75,25 +75,20 @@ def connect_to_task(task, behavior):
 
 
 class ElementaryBehavior:
+
     def __init__(self,
-                 field_dimensionality,
-                 field_sizes,
-                 field_resolutions,
+                 intention_field,
+                 cos_field,
                  int_node_to_int_field_weight,
                  int_field_to_cos_field_weight,
                  cos_field_to_cos_node_weight,
                  cos_node_to_cos_memory_node_weight,
                  int_inhibition_weight,
-                 reactivating=False):
+                 reactivating = False):
 
-        # dimensionality of the intention and CoS field (for now, they have the same dimensionality)
-        self._field_dimensionality = field_dimensionality
-        # sizes of the intention and CoS field (for now, they have the same sizes)
-        self._field_sizes = field_sizes
-        # resolutions of each dimension of the intention and CoS field (for now, they have the same resolutions)
-        self._field_resolutions = field_resolutions
-        # does the node reactivate its intention, when the CoS node gets deactivated?
-        self._reactivating = reactivating
+        # intention and cos field
+        self._intention_field = intention_field
+        self._cos_field = cos_field
 
         # connectables that describe weights between different nodes/fields
         self._int_node_to_int_field_weight = DynamicField.Weight(int_node_to_int_field_weight)
@@ -102,36 +97,62 @@ class ElementaryBehavior:
         self._cos_node_to_cos_memory_node_weight = DynamicField.Weight(cos_node_to_cos_memory_node_weight)
         self._int_inhibition_weight = DynamicField.Weight(int_inhibition_weight)
 
+        # does the node reactivate its intention, when the CoS node gets deactivated?
+        self._reactivating = reactivating
+        
         # intention node and its kernel
-        self._intention_node_kernel = Kernel.BoxKernel()
-        self._intention_node_kernel.set_amplitude(2.5)
-        self._intention_node = DynamicField.DynamicField([], [], self._intention_node_kernel)
-        # intention field and its kernel
-        self._intention_field_kernel = Kernel.GaussKernel(self._field_dimensionality)
-        self._intention_field_kernel.add_mode(1.0, [0.5] * self._field_dimensionality, [0.0] * self._field_dimensionality)
-        self._intention_field_kernel.add_mode(-5.5, [5.5] * self._field_dimensionality, [0.0] * self._field_dimensionality)
-        self._intention_field_kernel.calculate()
-        self._intention_field = DynamicField.DynamicField(field_sizes, field_resolutions, self._intention_field_kernel)
-        self._intention_field.set_global_inhibition(0.5)
+        intention_node_kernel = Kernel.BoxKernel()
+        intention_node_kernel.set_amplitude(2.5)
+        self._intention_node = DynamicField.DynamicField([], [], intention_node_kernel)
         # CoS node and its kernel
-        self._cos_node_kernel = Kernel.BoxKernel()
-        self._cos_node_kernel.set_amplitude(2.5)
-        self._cos_node = DynamicField.DynamicField([], [], self._cos_node_kernel)
-        # CoS field and its kernel
-        self._cos_field_kernel = Kernel.GaussKernel(self._field_dimensionality)
-        self._cos_field_kernel.add_mode(1.0, [0.5] * self._field_dimensionality, [0.0] * self._field_dimensionality)
-        self._cos_field_kernel.add_mode(-5.5, [5.5] * self._field_dimensionality, [0.0] * self._field_dimensionality)
-        self._cos_field_kernel.calculate()
-        self._cos_field = DynamicField.DynamicField(field_sizes, field_resolutions, self._cos_field_kernel)
-        self._cos_field.set_global_inhibition(0.5)
+        cos_node_kernel = Kernel.BoxKernel()
+        cos_node_kernel.set_amplitude(2.5)
+        self._cos_node = DynamicField.DynamicField([], [], cos_node_kernel)
         # CoS memory node and its kernel
-        self._cos_memory_node_kernel = Kernel.BoxKernel()
-        self._cos_memory_node_kernel.set_amplitude(4.5)
-        self._cos_memory_node = DynamicField.DynamicField([], [], self._cos_memory_node_kernel)
+        cos_memory_node_kernel = Kernel.BoxKernel()
+        cos_memory_node_kernel.set_amplitude(4.5)
+        self._cos_memory_node = DynamicField.DynamicField([], [], cos_memory_node_kernel)
 
         # connect all connectables in this elementary behavior
         self._connect()
 
+    @classmethod
+    def with_internal_fields(cls,
+                             field_dimensionality,
+                             field_sizes,
+                             field_resolutions,
+                             int_node_to_int_field_weight,
+                             int_field_to_cos_field_weight,
+                             cos_field_to_cos_node_weight,
+                             cos_node_to_cos_memory_node_weight,
+                             int_inhibition_weight,
+                             reactivating):
+
+        # intention field and its kernel
+        intention_field_kernel = Kernel.GaussKernel(field_dimensionality)
+        intention_field_kernel.add_mode(1.0, [0.5] * field_dimensionality, [0.0] * field_dimensionality)
+        intention_field_kernel.add_mode(-5.5, [5.5] * field_dimensionality, [0.0] * field_dimensionality)
+        intention_field_kernel.calculate()
+        intention_field = DynamicField.DynamicField(field_sizes, field_resolutions, intention_field_kernel)
+        intention_field.set_global_inhibition(0.5)
+
+        # CoS field and its kernel
+        cos_field_kernel = Kernel.GaussKernel(field_dimensionality)
+        cos_field_kernel.add_mode(1.0, [0.5] * field_dimensionality, [0.0] * field_dimensionality)
+        cos_field_kernel.add_mode(-5.5, [5.5] * field_dimensionality, [0.0] * field_dimensionality)
+        cos_field_kernel.calculate()
+        cos_field = DynamicField.DynamicField(field_sizes, field_resolutions, cos_field_kernel)
+        cos_field.set_global_inhibition(0.5)
+
+        return cls(intention_field,
+                   cos_field,
+                   int_node_to_int_field_weight,
+                   int_field_to_cos_field_weight,
+                   cos_field_to_cos_node_weight,
+                   cos_node_to_cos_memory_node_weight,
+                   int_inhibition_weight,
+                   reactivating)
+ 
     def get_intention_node(self):
         return self._intention_node
 
@@ -152,7 +173,7 @@ class ElementaryBehavior:
 
     def _connect(self):
         # connect intention node to intention field
-        self._intention_projection = DynamicField.Projection(0, self._field_dimensionality, set([]), [])
+        self._intention_projection = DynamicField.Projection(0, self._intention_field.get_dimensionality(), set([]), [])
         intention_processing_steps = [self._intention_projection, self._int_node_to_int_field_weight]
         DynamicField.connect(self._intention_node, self._intention_field, intention_processing_steps)
 
@@ -160,7 +181,7 @@ class ElementaryBehavior:
         DynamicField.connect(self._intention_field, self._cos_field, [self._int_field_to_cos_field_weight])
 
         # connect cos field to cos node
-        self._cos_projection = DynamicField.Projection(self._field_dimensionality, 0, set([]), [])
+        self._cos_projection = DynamicField.Projection(self._cos_field.get_dimensionality(), 0, set([]), [])
         DynamicField.connect(self._cos_field, self._cos_node, [self._cos_projection, self._cos_field_to_cos_node_weight])
 
         # connect cos node to cos memory node
