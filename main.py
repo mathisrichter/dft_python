@@ -3,6 +3,7 @@ import DynamicField
 import numpy
 import math
 import matplotlib.pyplot as plt
+from matplotlib import rc
 from enthought.mayavi import mlab
 from mpl_toolkits.axes_grid import ImageGrid
 from mpl_toolkits.axes_grid import make_axes_locatable
@@ -56,7 +57,7 @@ def main():
     competition_nodes = BehOrg.competition(elem_behavior_0, elem_behavior_1, task_node, bidirectional=True)
 
 
-    time_steps = 1200
+    time_steps = 1000
 
     task_node_activation = [0] * time_steps
     eb0_intention_node_activation = [0] * time_steps
@@ -84,14 +85,16 @@ def main():
 
     for i in range(time_steps):
 
-        if (i > 50):
-            task_node.set_boost(11)
-        if (i > 300):
+        if (i > 1):
+            task_node.set_boost(10)
+        if (i > 200):
             elem_behavior_0.get_cos_field().set_boost(1.0)
-        if (i > 500):
+        if (i > 350):
             elem_behavior_0.get_cos_field().set_boost(0.0)
-        if (i > 700):
+        if (i > 500):
             elem_behavior_1.get_cos_field().set_boost(1.0)
+        if (i > 600):
+            elem_behavior_1.get_cos_field().set_boost(0.0)
         task_node.step()
         elem_behavior_0.step()
         competition_nodes[0].step()
@@ -184,56 +187,57 @@ def main():
     plot_settings.set_mode("icdl")
 
     fig = plt.figure(1)
-#    fig.subplots_adjust(bottom=0.1, left=0.1, right=0.95, top=0.95)
-    fig.subplots_adjust(bottom=0.1)
+    fig.subplots_adjust(bottom=0.07, left=0.07, right=0.97, top=0.93)
 
-#    plt.axes([0.125,0.2,0.95-0.125,0.95-0.2])
+    plt.axes([0.125,0.2,0.95-0.125,0.95-0.2])
 
     time_course_subplot = plt.subplot(2,1,1)
-    time_course_subplot.axes.grid(color='grey', linestyle='dashed')
+    time_course_subplot.axes.grid(color='grey', linestyle='dotted')
 
-    plt.xlabel("time steps")
-    plt.ylabel("activation")
+    plt.xlabel(r'time steps')
+    plt.ylabel(r'activation')
     
-    plt.plot(task_node_activation, 'k-', label='task')
+    plt.plot(task_node_activation, 'y-', label=r'task')
 
-    plt.plot(eb0_intention_node_activation, 'r-', linewidth=1.0, label='EB0 intention', antialiased=True)
-    plt.plot(eb0_cos_node_activation, 'b-', linewidth=1.0, label='EB0 cos', antialiased=True)
-    plt.plot(eb0_cos_memory_node_activation, 'c-', label='EB0 cos mem', antialiased=True)
+    plt.plot(eb0_intention_node_activation, 'r-', label=r'EB0 intention', antialiased=True)
+    plt.plot(eb0_cos_node_activation, 'b-', label=r'EB0 cos', antialiased=True)
+    plt.plot(eb0_cos_memory_node_activation, 'c-', label=r'EB0 cos mem', antialiased=True)
 
-    plt.plot(eb1_intention_node_activation, 'r--', linewidth=1.0, label='EB1 intention', antialiased=True)
-    plt.plot(eb1_cos_node_activation, 'b--', linewidth=1.0, label='EB1 cos', antialiased=True)
-    plt.plot(eb1_cos_memory_node_activation, 'c--', label='EB1 cos mem', antialiased=True)
+    plt.plot(eb1_intention_node_activation, 'r--', label=r'EB1 intention', antialiased=True)
+    plt.plot(eb1_cos_node_activation, 'b--', label=r'EB1 cos', antialiased=True)
+    plt.plot(eb1_cos_memory_node_activation, 'c--', label=r'EB1 cos mem', antialiased=True)
 
-    plt.plot(competition_node_01_activation, 'g-.', label='competition 01', antialiased=True)
-    plt.plot(competition_node_10_activation, 'm-.', label='competition 10', antialiased=True)
+    plt.plot(competition_node_01_activation, 'g-.', label=r'competition 01', antialiased=True)
+    plt.plot(competition_node_10_activation, 'm-.', label=r'competition 10', antialiased=True)
     plt.legend(loc='upper right')
 
-    grid = ImageGrid(fig, 212, nrows_ncols = (4,1), axes_pad=0.1)
+    plt.annotate('boost', xy=(200,-2), xytext=(50,-10), arrowprops=dict(arrowstyle="->",connectionstyle="angle,angleA=0,angleB=90,rad=10"))
+
+    grid = ImageGrid(fig, 212, nrows_ncols = (4,1), axes_pad=0.1, aspect=False)
 
     grid[0].imshow(numpy.rollaxis(eb0_intention_field_activation_1d, 1), label='eb0 int field', aspect="auto")
     grid[0].invert_yaxis()
-    grid[0].set_yticks(range(0,90,20))
-    grid[0].set_ylabel("EB0 int")
+    grid[0].set_yticks(range(0,field_sizes[0]+10,20))
+    grid[0].set_ylabel(r'EB0 int')
 
     grid[1].imshow(numpy.rollaxis(eb0_cos_field_activation_1d, 1), label='eb0 cos field', aspect="auto")
     grid[1].invert_yaxis()
-    grid[1].set_yticks(range(0,90,20))
-    grid[1].set_ylabel("EB0 cos")
+    grid[1].set_yticks(range(0,field_sizes[0]+10,20))
+    grid[1].set_ylabel(r'EB0 cos')
 
     grid[2].imshow(numpy.rollaxis(eb1_intention_field_activation_1d, 1), label='eb1 int field', aspect="auto")
     grid[2].invert_yaxis()
-    grid[2].set_yticks(range(0,90,20))
-    grid[2].set_ylabel("EB1 int")
+    grid[2].set_yticks(range(0,field_sizes[0]+10,20))
+    grid[2].set_ylabel(r'EB1 int')
 
     grid[3].imshow(numpy.rollaxis(eb1_cos_field_activation_1d, 1), label='eb1 cos field', aspect="auto")
     grid[3].invert_yaxis()
-    grid[3].set_yticks(range(0,90,20))
-    grid[3].set_ylabel("EB1 cos")
-    grid[3].set_xlabel("time steps")
-    grid[3].set_xticks(range(0,1300,200))
+    grid[3].set_yticks(range(0,field_sizes[0]+10,20))
+    grid[3].set_ylabel(r'EB1 cos')
+    grid[3].set_xlabel(r'time steps')
+    grid[3].set_xticks(range(0,time_steps+100,200))
 
-    plt.savefig("competition_plot.eps")
+    plt.savefig("competition_plot.pdf", format="pdf")
     plt.show()
 
 #    act = eb0_intention_field_activation[500]

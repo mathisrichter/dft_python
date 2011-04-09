@@ -34,16 +34,18 @@ params0 = {'backend': 'eps',
           'text.usetex': True,
           'figure.figsize': get_figsize(250)}
 
-params_icdl = {'backend': 'eps',
-          'axes.labelsize': 10,
-          'text.fontsize': 10,
-          'xtick.labelsize': 10,
-          'ytick.labelsize': 10,
+params_icdl = {'backend': 'pdf',
+          'axes.labelsize': 8,
+          'text.fontsize': 8,
+          'xtick.labelsize': 8,
+          'ytick.labelsize': 8,
           'legend.pad': 0.1,     # empty space around the legend box
           'legend.fontsize': 8,
           'lines.markersize': 3,
-          'font.size': 10,
-          'text.usetex': True}
+          'font.size': 8,
+          'font.family': 'serif',
+          'text.usetex': True,
+          'figure.figsize': get_figsize(516.0)}
 
 # Medium sized images
 params1 = {'backend': 'eps',
@@ -56,7 +58,7 @@ params1 = {'backend': 'eps',
           'lines.markersize': 3,
           'font.size': 8,
           'text.usetex': True,
-          'figure.figsize': get_figsize(516)}
+          'figure.figsize': get_figsize(520)}
 
 # Large images (default)
 params2 = {'backend': 'eps',
@@ -66,7 +68,7 @@ params2 = {'backend': 'eps',
           'ytick.labelsize': 10,
           'legend.pad': 0.2,     # empty space around the legend box
           'legend.fontsize': 10,
-           'lines.markersize': 3,
+          'lines.markersize': 3,
           'font.size': 10,
           'text.usetex': True,
           'figure.figsize': get_figsize(800)}
