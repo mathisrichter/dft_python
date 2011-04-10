@@ -4,6 +4,7 @@ import Kernel
 import numpy
 import copy
 import scipy.interpolate
+import math_tools
 
 def sigmoid(x, beta, x0):
     return 1./ (1. + numpy.exp(-beta * (x - x0)))
@@ -427,7 +428,7 @@ class DynamicField(Connectable):
         for connectable in self.get_incoming_connectables():
             field_interaction += connectable.get_output()
 
-        global_inhibition = self._global_inhibition * sigmoid(activation, 5.0, 0.0).sum() / sum(self._output_dimension_sizes)
+        global_inhibition = self._global_inhibition * sigmoid(activation, 5.0, 0.0).sum() / math_tools.product(self._output_dimension_sizes)
 
         # compute the change of the system
         change = relaxation_time_factor * (- activation
@@ -445,10 +446,15 @@ class DynamicField(Connectable):
         self._activation += self.get_change(self._activation) + self._noise_strength * (random.random() - 0.5)
         self.write_activation_log()
 
-    def start_activation_log(self, file_name):
+    def start_activation_log(self, file_name=""):
         """Opens the file with the supplied file name. Once there is an open
         file handle, the _step_computation() method will write the current
         activation of the field to the file."""
+        # if no filename was supplied ..
+        if (file_name == ""):
+            # .. set the name of the field as the filename, but replace spaces
+            # with underscores.
+            file_name = self._name.replace(" ", "_")
         self._activation_log_file = open(file_name, 'a')
 
     def stop_activation_log(self):
@@ -707,8 +713,7 @@ class Projection(Connectable):
 
         if (self._projection_compresses):
             for i in range(len(self._dimensions_to_compress)):
-                input = input.sum(self._dimensions_to_compress[i] - i)
-            input = sigmoid(input, 5.0, 0.0)
+                input = input.max(self._dimensions_to_compress[i] - i)
                 
         elif (self._projection_expands):
             self._output_buffer = self._expand_method(input)

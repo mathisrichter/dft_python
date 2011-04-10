@@ -23,8 +23,9 @@ def main():
                                                 field_sizes=[[field_sizes[0]],[field_sizes[1]]],
                                                 field_resolutions=[],
                                                 int_node_to_int_field_weight=int_weight_0,
+                                                int_node_to_cos_node_weight=2.0,
                                                 int_field_to_cos_field_weight=3.5,
-                                                cos_field_to_cos_node_weight=5.5,
+                                                cos_field_to_cos_node_weight=3.0,
                                                 cos_node_to_cos_memory_node_weight=2.5,
                                                 int_inhibition_weight=-6.0,
                                                 reactivating=False)
@@ -33,8 +34,9 @@ def main():
                                                 field_sizes=[[field_sizes[0]],[field_sizes[1]]],
                                                 field_resolutions=[],
                                                 int_node_to_int_field_weight=int_weight_1,
+                                                int_node_to_cos_node_weight=2.0,
                                                 int_field_to_cos_field_weight=3.5,
-                                                cos_field_to_cos_node_weight=5.5,
+                                                cos_field_to_cos_node_weight=3.0,
                                                 cos_node_to_cos_memory_node_weight=2.5,
                                                 int_inhibition_weight=-6.0,
                                                 reactivating=False)
@@ -79,9 +81,9 @@ def main():
             elem_behavior_0.get_cos_field().set_boost(1.0)
         if (i > 350):
             elem_behavior_0.get_cos_field().set_boost(0.0)
-        if (i > 500):
+        if (i > 550):
             elem_behavior_1.get_cos_field().set_boost(1.0)
-        if (i > 600):
+        if (i > 650):
             elem_behavior_1.get_cos_field().set_boost(0.0)
         task_node.step()
         elem_behavior_0.step()
@@ -185,21 +187,22 @@ def main():
     plt.xlabel(r'time steps')
     plt.ylabel(r'activation')
     
-    plt.plot(task_node_activation, 'y-', label=r'task')
+    plt.plot(task_node_activation, 'k-', label=r'task')
 
     plt.plot(eb0_intention_node_activation, 'r-', label=r'EB0 intention', antialiased=True)
-    plt.plot(eb0_cos_node_activation, 'b-', label=r'EB0 cos', antialiased=True)
-    plt.plot(eb0_cos_memory_node_activation, 'c-', label=r'EB0 cos mem', antialiased=True)
+    plt.plot(eb0_cos_node_activation, 'r--', label=r'EB0 cos', antialiased=True)
+    plt.plot(eb0_cos_memory_node_activation, 'r:', label=r'EB0 cos mem', antialiased=True)
 
-    plt.plot(eb1_intention_node_activation, 'r--', label=r'EB1 intention', antialiased=True)
+    plt.plot(eb1_intention_node_activation, 'b-', label=r'EB1 intention', antialiased=True)
     plt.plot(eb1_cos_node_activation, 'b--', label=r'EB1 cos', antialiased=True)
-    plt.plot(eb1_cos_memory_node_activation, 'c--', label=r'EB1 cos mem', antialiased=True)
+    plt.plot(eb1_cos_memory_node_activation, 'b:', label=r'EB1 cos mem', antialiased=True)
 
     plt.plot(competition_node_01_activation, 'g-.', label=r'competition 01', antialiased=True)
-    plt.plot(competition_node_10_activation, 'm-.', label=r'competition 10', antialiased=True)
+    plt.plot(competition_node_10_activation, 'c-.', label=r'competition 10', antialiased=True)
     plt.legend(loc='upper right')
 
-    plt.annotate('boost', xy=(200,-2), xytext=(50,-10), arrowprops=dict(arrowstyle="->",connectionstyle="angle,angleA=0,angleB=90,rad=10"))
+    plt.annotate('CoS EB0', xy=(200,-2), xytext=(100,-10), arrowprops=dict(arrowstyle="->",connectionstyle="angle,angleA=0,angleB=90,rad=10"))
+    plt.annotate('CoS EB1', xy=(550,-2), xytext=(450,-10), arrowprops=dict(arrowstyle="->",connectionstyle="angle,angleA=0,angleB=90,rad=10"))
 
     grid = ImageGrid(fig, 212, nrows_ncols = (4,1), axes_pad=0.1, aspect=False)
 

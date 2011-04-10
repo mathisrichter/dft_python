@@ -80,38 +80,65 @@ class ElementaryBehavior:
                  intention_field,
                  cos_field,
                  int_node_to_int_field_weight,
-                 int_field_to_cos_field_weight,
+                 int_node_to_cos_node_weight,
                  cos_field_to_cos_node_weight,
                  cos_node_to_cos_memory_node_weight,
                  int_inhibition_weight,
-                 reactivating = False):
+                 reactivating = False,
+                 log_activation = False,
+                 step_fields = False,
+                 name = ""):
+
+        # name of this elementary behavior
+        self._name = name
 
         # intention and cos field
         self._intention_field = intention_field
+        self._intention_field.set_name(self._name + " intention field")
+        if (log_activation):
+            self._intention_field.start_activation_log()
         self._cos_field = cos_field
+        self._cos_field.set_name(self._name + " cos field")
+        if (log_activation):
+            self._cos_field.start_activation_log()
 
         # connectables that describe weights between different nodes/fields
         self._int_node_to_int_field_weight = DynamicField.Weight(int_node_to_int_field_weight)
-        self._int_field_to_cos_field_weight = DynamicField.Weight(int_field_to_cos_field_weight)
+        self._int_node_to_cos_node_weight = DynamicField.Weight(int_node_to_cos_node_weight)
         self._cos_field_to_cos_node_weight = DynamicField.Weight(cos_field_to_cos_node_weight)
         self._cos_node_to_cos_memory_node_weight = DynamicField.Weight(cos_node_to_cos_memory_node_weight)
         self._int_inhibition_weight = DynamicField.Weight(int_inhibition_weight)
 
         # does the node reactivate its intention, when the CoS node gets deactivated?
         self._reactivating = reactivating
-        
+
+        # should the intention and CoS field be stepped, when the elementary
+        # behavior is stepped?
+        # if the fields belong to other elementary behaviors as well, make sure
+        # that they are only stepped once every iteration
+        self._step_fields = step_fields
+
         # intention node and its kernel
         intention_node_kernel = Kernel.BoxKernel()
         intention_node_kernel.set_amplitude(2.5)
         self._intention_node = DynamicField.DynamicField([], [], intention_node_kernel)
+        self._intention_node.set_name(self._name + " intention node")
+        if (log_activation):
+            self._intention_node.start_activation_log()
         # CoS node and its kernel
         cos_node_kernel = Kernel.BoxKernel()
         cos_node_kernel.set_amplitude(2.5)
         self._cos_node = DynamicField.DynamicField([], [], cos_node_kernel)
+        self._cos_node.set_name(self._name + " cos node")
+        if (log_activation):
+            self._cos_node.start_activation_log()
         # CoS memory node and its kernel
         cos_memory_node_kernel = Kernel.BoxKernel()
         cos_memory_node_kernel.set_amplitude(4.5)
         self._cos_memory_node = DynamicField.DynamicField([], [], cos_memory_node_kernel)
+        self._cos_memory_node.set_name(self._name + " cos memory node")
+        if (log_activation):
+            self._cos_memory_node.start_activation_log()
 
         # connect all connectables in this elementary behavior
         self._connect()
@@ -122,11 +149,14 @@ class ElementaryBehavior:
                              field_sizes,
                              field_resolutions,
                              int_node_to_int_field_weight,
+                             int_node_to_cos_node_weight,
                              int_field_to_cos_field_weight,
                              cos_field_to_cos_node_weight,
                              cos_node_to_cos_memory_node_weight,
                              int_inhibition_weight,
-                             reactivating):
+                             reactivating=False,
+                             log_activation=False,
+                             name=""):
 
         # intention field and its kernel
         intention_field_kernel = Kernel.GaussKernel(field_dimensionality)
@@ -134,7 +164,7 @@ class ElementaryBehavior:
         intention_field_kernel.add_mode(-5.5, [5.5] * field_dimensionality, [0.0] * field_dimensionality)
         intention_field_kernel.calculate()
         intention_field = DynamicField.DynamicField(field_sizes, field_resolutions, intention_field_kernel)
-        intention_field.set_global_inhibition(0.5)
+        intention_field.set_global_inhibition(1.5)
 
         # CoS field and its kernel
         cos_field_kernel = Kernel.GaussKernel(field_dimensionality)
@@ -142,16 +172,23 @@ class ElementaryBehavior:
         cos_field_kernel.add_mode(-5.5, [5.5] * field_dimensionality, [0.0] * field_dimensionality)
         cos_field_kernel.calculate()
         cos_field = DynamicField.DynamicField(field_sizes, field_resolutions, cos_field_kernel)
-        cos_field.set_global_inhibition(0.5)
+        cos_field.set_global_inhibition(1.5)
+
+        # connect intention field to cos field
+        weight = DynamicField.Weight(int_field_to_cos_field_weight)
+        DynamicField.connect(intention_field, cos_field, [weight])
 
         return cls(intention_field,
                    cos_field,
                    int_node_to_int_field_weight,
-                   int_field_to_cos_field_weight,
+                   int_node_to_cos_node_weight,
                    cos_field_to_cos_node_weight,
                    cos_node_to_cos_memory_node_weight,
                    int_inhibition_weight,
-                   reactivating)
+                   reactivating,
+                   log_activation,
+                   step_fields=True,
+                   name=name)
  
     def get_intention_node(self):
         return self._intention_node
@@ -177,8 +214,8 @@ class ElementaryBehavior:
         intention_processing_steps = [self._intention_projection, self._int_node_to_int_field_weight]
         DynamicField.connect(self._intention_node, self._intention_field, intention_processing_steps)
 
-        # connect intention field to cos field
-        DynamicField.connect(self._intention_field, self._cos_field, [self._int_field_to_cos_field_weight])
+        # connect intention node to cos node
+        DynamicField.connect(self._intention_node, self._cos_node, [self._int_node_to_cos_node_weight])
 
         # connect cos field to cos node
         self._cos_projection = DynamicField.Projection(self._cos_field.get_dimensionality(), 0, set([]), [])
@@ -191,15 +228,16 @@ class ElementaryBehavior:
         intention_inhibition_node = self._cos_memory_node
         if (self._reactivating):
             intention_inhibition_node = self._cos_node
-
         DynamicField.connect(intention_inhibition_node, self._intention_node, [self._int_inhibition_weight])
 
     def step(self):
         connectables = [self._intention_node,
-                        self._intention_field,
-                        self._cos_field,
                         self._cos_node,
                         self._cos_memory_node]
+
+        if (self._step_fields):
+            connectables.insert(1, self._intention_field)
+            connectables.insert(2, self._cos_field)
 
         for connectable in connectables:
             connectable.step()
