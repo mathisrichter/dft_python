@@ -21,6 +21,13 @@ def get_figsize(fig_width_pt):
     fig_size = [fig_width,fig_height]      # exact figsize
     return fig_size
 
+def get_figsize45(fig_width_pt):
+    inches_per_pt = 1.0/72.27
+    fig_width = fig_width_pt * inches_per_pt
+    fig_height = fig_width * 4/5
+    fig_size = [fig_width, fig_height]
+    return fig_size
+
 # Publishable quality image settings for 2-column papers
 params0 = {'backend': 'eps',
           'axes.labelsize': 6,
@@ -33,6 +40,19 @@ params0 = {'backend': 'eps',
           'font.size': 6,
           'text.usetex': True,
           'figure.figsize': get_figsize(250)}
+
+params_mini = {'backend': 'pdf',
+          'axes.labelsize': 16,
+          'text.fontsize': 16,
+          'xtick.labelsize': 16,
+          'ytick.labelsize': 16,
+          'legend.pad': 0.1,     # empty space around the legend box
+          'legend.fontsize': 16,
+          'lines.markersize': 3,
+          'font.size': 16,
+          'font.family': 'serif',
+          'text.usetex': True,
+          'figure.figsize': get_figsize45(350.0)}
 
 params_icdl = {'backend': 'pdf',
           'axes.labelsize': 8,
@@ -80,6 +100,8 @@ def set_mode(mode):
         pylab.rcParams.update(params1)
     elif mode == "icdl":
         pylab.rcParams.update(params_icdl)
+    elif mode == "mini":
+        pylab.rcParams.update(params_mini)
     else:
         pylab.rcParams.update(params2)
 

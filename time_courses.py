@@ -28,7 +28,8 @@ def main():
                                                 cos_field_to_cos_node_weight=3.0,
                                                 cos_node_to_cos_memory_node_weight=2.5,
                                                 int_inhibition_weight=-6.0,
-                                                reactivating=False)
+                                                reactivating=False,
+                                                name="eb0")
 
     elem_behavior_1 = BehOrg.ElementaryBehavior.with_internal_fields(field_dimensionality=2,
                                                 field_sizes=[[field_sizes[0]],[field_sizes[1]]],
@@ -39,7 +40,8 @@ def main():
                                                 cos_field_to_cos_node_weight=3.0,
                                                 cos_node_to_cos_memory_node_weight=2.5,
                                                 int_inhibition_weight=-6.0,
-                                                reactivating=False)
+                                                reactivating=False,
+                                                name="eb1")
 
     BehOrg.connect_to_task(task_node, elem_behavior_0)
     BehOrg.connect_to_task(task_node, elem_behavior_1)
@@ -73,16 +75,30 @@ def main():
 
     print_output = False
 
+    elem_behavior_0.get_intention_node().set_boost(2.0)
+
     for i in range(time_steps):
 
         if (i > 1):
             task_node.set_boost(10)
         if (i > 200):
-            elem_behavior_0.get_cos_field().set_boost(1.0)
+            elem_behavior_0.get_cos_field().set_boost(2.5)
         if (i > 350):
             elem_behavior_0.get_cos_field().set_boost(0.0)
+#        if (i == 500):
+#            eb0_int_field = elem_behavior_0.get_intention_field()
+#            eb0_cos_field = elem_behavior_0.get_cos_field()
+#            eb1_int_field = elem_behavior_1.get_intention_field()
+#            eb1_cos_field = elem_behavior_1.get_cos_field()
+#
+#            fields = [eb0_int_field, eb0_cos_field, eb1_int_field, eb1_cos_field]
+#            for field in fields:
+#                field.start_activation_log()
+#                field.write_activation_log()
+#                field.stop_activation_log()
+
         if (i > 550):
-            elem_behavior_1.get_cos_field().set_boost(1.0)
+            elem_behavior_1.get_cos_field().set_boost(2.5)
         if (i > 650):
             elem_behavior_1.get_cos_field().set_boost(0.0)
         task_node.step()
@@ -90,6 +106,7 @@ def main():
         competition_nodes[0].step()
         competition_nodes[1].step()
         elem_behavior_1.step()
+
 
         if (print_output is True):
             print("task node activation (boost: " + str(task_node.get_boost()) + ")")
@@ -109,7 +126,7 @@ def main():
             print(eb0_intention_field_activation[i])
         if (print_output is True):
             print("int field activation 1d")
-        eb0_intention_field_activation_1d[i] = eb0_intention_field_activation[i].sum(0)
+        eb0_intention_field_activation_1d[i] = eb0_intention_field_activation[i].max(0)
         if (print_output is True):
             print(eb0_intention_field_activation_1d)
         if (print_output is True):
@@ -119,7 +136,7 @@ def main():
             print(eb0_cos_field_activation[i])
         if (print_output is True):
             print("cos field activation 1d: ")
-        eb0_cos_field_activation_1d[i] = eb0_cos_field_activation[i].sum(0)
+        eb0_cos_field_activation_1d[i] = eb0_cos_field_activation[i].max(0)
         if (print_output is True):
             print(eb0_cos_field_activation_1d)
         if (print_output is True):
@@ -152,7 +169,7 @@ def main():
         if (print_output is True):
             print(elem_behavior_1.get_intention_field().get_activation())
             print("int field activation 1 1d")
-        eb1_intention_field_activation_1d[i] = eb1_intention_field_activation[i].sum(0)
+        eb1_intention_field_activation_1d[i] = eb1_intention_field_activation[i].max(0)
         if (print_output is True):
             print(eb0_intention_field_activation_1d)
         if (print_output is True):
@@ -160,7 +177,7 @@ def main():
         eb1_cos_field_activation[i] = elem_behavior_1.get_cos_field().get_activation()
         if (print_output is True):
             print(elem_behavior_1.get_cos_field().get_activation())
-        eb1_cos_field_activation_1d[i] = eb1_cos_field_activation[i].sum(0)
+        eb1_cos_field_activation_1d[i] = eb1_cos_field_activation[i].max(0)
         if (print_output is True):
             print(eb1_cos_field_activation_1d)
         if (print_output is True):
@@ -206,22 +223,22 @@ def main():
 
     grid = ImageGrid(fig, 212, nrows_ncols = (4,1), axes_pad=0.1, aspect=False)
 
-    grid[0].imshow(numpy.rollaxis(eb0_intention_field_activation_1d, 1), label='eb0 int field', aspect="auto")
+    grid[0].imshow(numpy.rollaxis(eb0_intention_field_activation_1d, 1), label='eb0 int field', aspect="auto", vmin=-10, vmax=10)
     grid[0].invert_yaxis()
     grid[0].set_yticks(range(0,field_sizes[0]+10,20))
     grid[0].set_ylabel(r'EB0 int')
 
-    grid[1].imshow(numpy.rollaxis(eb0_cos_field_activation_1d, 1), label='eb0 cos field', aspect="auto")
+    grid[1].imshow(numpy.rollaxis(eb0_cos_field_activation_1d, 1), label='eb0 cos field', aspect="auto", vmin=-10, vmax=10)
     grid[1].invert_yaxis()
     grid[1].set_yticks(range(0,field_sizes[0]+10,20))
     grid[1].set_ylabel(r'EB0 cos')
 
-    grid[2].imshow(numpy.rollaxis(eb1_intention_field_activation_1d, 1), label='eb1 int field', aspect="auto")
+    grid[2].imshow(numpy.rollaxis(eb1_intention_field_activation_1d, 1), label='eb1 int field', aspect="auto", vmin=-10, vmax=10)
     grid[2].invert_yaxis()
     grid[2].set_yticks(range(0,field_sizes[0]+10,20))
     grid[2].set_ylabel(r'EB1 int')
 
-    grid[3].imshow(numpy.rollaxis(eb1_cos_field_activation_1d, 1), label='eb1 cos field', aspect="auto")
+    grid[3].imshow(numpy.rollaxis(eb1_cos_field_activation_1d, 1), label='eb1 cos field', aspect="auto", vmin=-10, vmax=10)
     grid[3].invert_yaxis()
     grid[3].set_yticks(range(0,field_sizes[0]+10,20))
     grid[3].set_ylabel(r'EB1 cos')

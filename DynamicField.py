@@ -455,12 +455,15 @@ class DynamicField(Connectable):
             # .. set the name of the field as the filename, but replace spaces
             # with underscores.
             file_name = self._name.replace(" ", "_")
+            file_name = "snapshots/" + file_name + ".txt"
+
         self._activation_log_file = open(file_name, 'a')
 
     def stop_activation_log(self):
         "Closes the file handle of the activation log (if it's open)."
         if self._activation_log_file != None:
             self._activation_log_file.close()
+            self._activation_log_file = None
 
     def write_activation_log(self):
         "Writes the current activation of the field to file."

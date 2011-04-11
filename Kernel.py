@@ -64,12 +64,18 @@ class KernelMode:
             center_index = math.floor(kernel_width / 2) + round(self._shifts[dimension_index])
 
             kernel_part = numpy.zeros(shape=kernel_width)
-            for size_index in range(kernel_part.size):
-                kernel_part[size_index] = math.exp(-math.pow(size_index - center_index, 2.0) /       \
-                                          (2.0 * math.pow(self._steepnesses[dimension_index], 2.0)))
+            for i in range(kernel_width):
+                kernel_part[i] = math.exp(-math.pow(i - center_index, 2.0) /       \
+                                         (2.0 * math.pow(self._steepnesses[dimension_index], 2.0)))
 
             # normalize kernel part
             kernel_part *= (1. / sum(kernel_part))
+
+            # multiply the first kernel part with the amplitude.
+            # when convolving with all separated kernel parts, this will lead
+            # to the correct amplitude value for the "whole kernel"
+            if (dimension_index == 0):
+                kernel_part *= self._amplitude
 
             self._separated_kernel_parts.append(kernel_part)
 
