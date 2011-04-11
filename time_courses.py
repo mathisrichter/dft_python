@@ -75,8 +75,6 @@ def main():
 
     print_output = False
 
-    elem_behavior_0.get_intention_node().set_boost(2.0)
-
     for i in range(time_steps):
 
         if (i > 1):
@@ -85,18 +83,6 @@ def main():
             elem_behavior_0.get_cos_field().set_boost(2.5)
         if (i > 350):
             elem_behavior_0.get_cos_field().set_boost(0.0)
-#        if (i == 500):
-#            eb0_int_field = elem_behavior_0.get_intention_field()
-#            eb0_cos_field = elem_behavior_0.get_cos_field()
-#            eb1_int_field = elem_behavior_1.get_intention_field()
-#            eb1_cos_field = elem_behavior_1.get_cos_field()
-#
-#            fields = [eb0_int_field, eb0_cos_field, eb1_int_field, eb1_cos_field]
-#            for field in fields:
-#                field.start_activation_log()
-#                field.write_activation_log()
-#                field.stop_activation_log()
-
         if (i > 550):
             elem_behavior_1.get_cos_field().set_boost(2.5)
         if (i > 650):
@@ -218,8 +204,8 @@ def main():
     plt.plot(competition_node_10_activation, 'c-.', label=r'competition 10', antialiased=True)
     plt.legend(loc='upper right')
 
-    plt.annotate('CoS EB0', xy=(200,-2), xytext=(100,-10), arrowprops=dict(arrowstyle="->",connectionstyle="angle,angleA=0,angleB=90,rad=10"))
-    plt.annotate('CoS EB1', xy=(550,-2), xytext=(450,-10), arrowprops=dict(arrowstyle="->",connectionstyle="angle,angleA=0,angleB=90,rad=10"))
+    plt.annotate('CoS EB0', xy=(200,-2), xytext=(110,-10), arrowprops=dict(arrowstyle="->",connectionstyle="angle,angleA=0,angleB=90,rad=10"))
+    plt.annotate('CoS EB1', xy=(550,-2), xytext=(460,-10), arrowprops=dict(arrowstyle="->",connectionstyle="angle,angleA=0,angleB=90,rad=10"))
 
     grid = ImageGrid(fig, 212, nrows_ncols = (4,1), axes_pad=0.1, aspect=False)
 
@@ -247,11 +233,6 @@ def main():
 
     plt.savefig("competition_plot.pdf", format="pdf")
     plt.show()
-
-#    act = eb0_intention_field_activation[500]
-#    x,y = numpy.mgrid[0:act.shape[0]:1, 0:act.shape[1]:1]
-#    s = mlab.surf(x, y, act)
-#    mlab.show()
 
 if __name__ == "__main__":
     main()

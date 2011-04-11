@@ -35,6 +35,11 @@ def main():
     pe_field = numpy.fromfile(pe_file, sep=', ')
     pe_field = pe_field.reshape(50,50)
 
+    color_space_file = open("snapshots/color_space_field.txt", 'r')
+    color_space_field = numpy.fromfile(color_space_file, sep=', ')
+    color_space_field = color_space_field.reshape(50,50,50)
+
+
     plot_settings.set_mode("mini")
 
     ##########################################################################
@@ -43,6 +48,7 @@ def main():
 #    fig.subplots_adjust(bottom=0.07, left=0.07, right=0.97, top=0.93)
 
     plt.axes([0.125,0.2,0.95-0.125,0.95-0.2])
+    plt.axis([0,50,-6.5,5])
     plt.grid(color='grey', linestyle='dotted')
 
     plt.plot(fc_int_field, 'r-', label=r'fc int', antialiased=True)
@@ -57,6 +63,7 @@ def main():
 #    fig.subplots_adjust(bottom=0.07, left=0.07, right=0.97, top=0.93)
 
     plt.axes([0.125,0.2,0.95-0.125,0.95-0.2])
+    plt.axis([0,50,-6.5,5])
     plt.grid(color='grey', linestyle='dotted')
 
     plt.plot(fc_cos_field, 'r-', label=r'fc cos', antialiased=True)
@@ -71,6 +78,7 @@ def main():
 #    fig.subplots_adjust(bottom=0.07, left=0.07, right=0.97, top=0.93)
 
     plt.axes([0.125,0.2,0.95-0.125,0.95-0.2])
+    plt.axis([0,50,-6.5,5])
     plt.grid(color='grey', linestyle='dotted')
 
     plt.plot(gr_int_field, 'r-', label=r'gr int', antialiased=True)
@@ -85,6 +93,7 @@ def main():
 #    fig.subplots_adjust(bottom=0.07, left=0.07, right=0.97, top=0.93)
 
     plt.axes([0.125,0.2,0.95-0.125,0.95-0.2])
+    plt.axis([0,50,-6.5,5])
     plt.grid(color='grey', linestyle='dotted')
 
     plt.plot(gr_cos_field, 'r-', label=r'gr cos', antialiased=True)
@@ -177,6 +186,20 @@ def main():
 
     plt.savefig("fig/perception_ee_field.pdf", format="pdf")
 
+    ##########################################################################
+    # create a figure for the color-space plot
+    x,y,z = numpy.mgrid[0:color_space_field.shape[0]:1, 0:color_space_field.shape[1]:1, 0:color_space_field.shape[2]:1]
+
+    fig = plt.figure(9)
+
+#    ax = fig.gca(projection='3d')
+    surf = mlab.contour3d(x, y, z, color_space_field, vmin=-5, vmax=5, colormap='jet')
+#    ax.set_zlim3d(-5.01, 5.01)
+
+#    plt.savefig("fig/color_space_field.pdf", format="pdf")
+
+
+
 
     plt.show()
 
@@ -189,6 +212,7 @@ def main():
     gr_cos_file.close()
     st_file.close()
     pe_file.close()
+    color_space_file.close()
 
 
 
