@@ -19,7 +19,7 @@ def main():
 
     # create elementary behavior: find color
     find_color_field_size = 50
-    find_color_int_weight = math_tools.gauss_1d(find_color_field_size, amplitude=10, sigma=5.0, shift=10)
+    find_color_int_weight = math_tools.gauss_1d(find_color_field_size, amplitude=8.0, sigma=2.0, shift=10)
 
     find_color = BehOrg.ElementaryBehavior.with_internal_fields(field_dimensionality=1,
                                                 field_sizes=[[find_color_field_size]],
@@ -174,11 +174,7 @@ def main():
     perception_ee_field.set_global_inhibition(7.5)
     perception_ee_field.set_name("perception_ee_field")
 
-    camera_to_perception_ee_projection = DynamicField.Projection(camera_dimensionality, perception_ee_field_dimensionality, set([0, 1]), [0, 1])
-    camera_to_perception_ee_weight = DynamicField.Weight(5.5)
-    DynamicField.connect(camera_field, perception_ee_field, [camera_to_perception_ee_projection, camera_to_perception_ee_weight])
-
-    perception_ee_to_move_ee_cos_weight = DynamicField.Weight(4.5)
+    perception_ee_to_move_ee_cos_weight = DynamicField.Weight(3.5)
     DynamicField.connect(perception_ee_field, move_ee.get_cos_field(), [perception_ee_to_move_ee_cos_weight])
 
 
@@ -227,8 +223,11 @@ def main():
     perception_ee_field_x_activation = numpy.zeros((time_steps, perception_ee_field_sizes[0]))
 
 
-    gripper_boost = math_tools.gauss_1d(gripper_field_size, amplitude=3.5, sigma=5.0, shift=gripper_field_size-5) 
+    gripper_boost = math_tools.gauss_1d(gripper_field_size, amplitude=8.0, sigma=2.0, shift=gripper_field_size-5) 
     gripper_open.get_cos_field().set_boost(gripper_boost)
+
+    perception_ee_boost = math_tools.gauss_2d(perception_ee_field_sizes, amplitude=8.0, sigmas=[2.0, 2.0], shifts=[34,7])
+    perception_ee_field.set_boost(perception_ee_boost)
 
     for i in range(time_steps):
 
@@ -239,7 +238,7 @@ def main():
             camera_boost = camera_boost_0 + camera_boost_1 + camera_boost_2
             camera_field.set_boost(camera_boost)
 
-        if (i == 280):
+        if (i == 380):
             fields = [find_color.get_intention_field(),
                       find_color.get_cos_field(),
                       move_ee.get_intention_field(),
@@ -253,6 +252,10 @@ def main():
                 field.start_activation_log()
                 field.write_activation_log()
                 field.stop_activation_log()
+
+        if (i == 400):
+            perception_ee_boost = math_tools.gauss_2d(perception_ee_field_sizes, amplitude=8.0, sigmas=[2.0, 2.0], shifts=[10,30])
+            perception_ee_field.set_boost(perception_ee_boost)
 
 
         # step all connectables and behaviors

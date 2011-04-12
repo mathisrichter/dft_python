@@ -193,12 +193,12 @@ def main():
     plt.plot(task_node_activation, 'k-', label=r'task')
 
     plt.plot(eb0_intention_node_activation, 'r-', label=r'EB0 intention', antialiased=True)
-    plt.plot(eb0_cos_node_activation, 'r--', label=r'EB0 cos', antialiased=True)
-    plt.plot(eb0_cos_memory_node_activation, 'r:', label=r'EB0 cos mem', antialiased=True)
+    plt.plot(eb0_cos_node_activation, 'r--', label=r'EB0 CoS', antialiased=True)
+    plt.plot(eb0_cos_memory_node_activation, 'r:', label=r'EB0 CoS mem', antialiased=True)
 
     plt.plot(eb1_intention_node_activation, 'b-', label=r'EB1 intention', antialiased=True)
-    plt.plot(eb1_cos_node_activation, 'b--', label=r'EB1 cos', antialiased=True)
-    plt.plot(eb1_cos_memory_node_activation, 'b:', label=r'EB1 cos mem', antialiased=True)
+    plt.plot(eb1_cos_node_activation, 'b--', label=r'EB1 CoS', antialiased=True)
+    plt.plot(eb1_cos_memory_node_activation, 'b:', label=r'EB1 CoS mem', antialiased=True)
 
     plt.plot(competition_node_01_activation, 'g-.', label=r'competition 01', antialiased=True)
     plt.plot(competition_node_10_activation, 'c-.', label=r'competition 10', antialiased=True)
@@ -214,20 +214,20 @@ def main():
     grid[0].set_yticks(range(0,field_sizes[0]+10,20))
     grid[0].set_ylabel(r'EB0 int')
 
-    grid[1].imshow(numpy.rollaxis(eb0_cos_field_activation_1d, 1), label='eb0 cos field', aspect="auto", vmin=-10, vmax=10)
+    grid[1].imshow(numpy.rollaxis(eb0_cos_field_activation_1d, 1), label='eb0 CoS field', aspect="auto", vmin=-10, vmax=10)
     grid[1].invert_yaxis()
     grid[1].set_yticks(range(0,field_sizes[0]+10,20))
-    grid[1].set_ylabel(r'EB0 cos')
+    grid[1].set_ylabel(r'EB0 CoS')
 
     grid[2].imshow(numpy.rollaxis(eb1_intention_field_activation_1d, 1), label='eb1 int field', aspect="auto", vmin=-10, vmax=10)
     grid[2].invert_yaxis()
     grid[2].set_yticks(range(0,field_sizes[0]+10,20))
     grid[2].set_ylabel(r'EB1 int')
 
-    grid[3].imshow(numpy.rollaxis(eb1_cos_field_activation_1d, 1), label='eb1 cos field', aspect="auto", vmin=-10, vmax=10)
+    grid[3].imshow(numpy.rollaxis(eb1_cos_field_activation_1d, 1), label='eb1 CoS field', aspect="auto", vmin=-10, vmax=10)
     grid[3].invert_yaxis()
     grid[3].set_yticks(range(0,field_sizes[0]+10,20))
-    grid[3].set_ylabel(r'EB1 cos')
+    grid[3].set_ylabel(r'EB1 CoS')
     grid[3].set_xlabel(r'time steps')
     grid[3].set_xticks(range(0,time_steps+100,200))
 
