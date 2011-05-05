@@ -80,14 +80,23 @@ class ElementaryBehavior:
                  intention_field,
                  cos_field,
                  int_node_to_int_field_weight,
-                 int_node_to_cos_node_weight,
-                 cos_field_to_cos_node_weight,
-                 cos_node_to_cos_memory_node_weight,
-                 int_inhibition_weight,
+                 int_node_to_cos_node_weight = None,
+                 cos_field_to_cos_node_weight = None,
+                 cos_node_to_cos_memory_node_weight = None,
+                 int_inhibition_weight = None,
                  reactivating = False,
                  log_activation = False,
                  step_fields = False,
                  name = ""):
+
+        if (int_node_to_cos_node_weight is None):
+            int_node_to_cos_node_weight = 2.0
+        if (cos_field_to_cos_node_weight is None):
+            cos_field_to_cos_node_weight = 3.0
+        if (cos_node_to_cos_memory_node_weight is None):
+            cos_node_to_cos_memory_node_weight = 2.5
+        if (int_inhibition_weight is None):
+            int_inhibition_weight = -6.0
 
         # name of this elementary behavior
         self._name = name
@@ -149,14 +158,17 @@ class ElementaryBehavior:
                              field_sizes,
                              field_resolutions,
                              int_node_to_int_field_weight,
-                             int_node_to_cos_node_weight,
-                             int_field_to_cos_field_weight,
-                             cos_field_to_cos_node_weight,
-                             cos_node_to_cos_memory_node_weight,
-                             int_inhibition_weight,
-                             reactivating=False,
-                             log_activation=False,
-                             name=""):
+                             int_node_to_cos_node_weight = None,
+                             int_field_to_cos_field_weight = None,
+                             cos_field_to_cos_node_weight = None,
+                             cos_node_to_cos_memory_node_weight = None,
+                             int_inhibition_weight = None,
+                             reactivating = False,
+                             log_activation = False,
+                             name = ""):
+
+        if (int_field_to_cos_field_weight is None):
+            int_field_to_cos_field_weight = 2.0
 
         # intention field and its kernel
         intention_field_kernel = Kernel.GaussKernel(field_dimensionality)

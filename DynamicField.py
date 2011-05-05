@@ -290,17 +290,18 @@ class DynamicField(Connectable):
 
         # noise strength of the system
         self._noise_strength = 0.05
-        # value the activation will relax to without external input
-        self._resting_level = -5.0
         # inhibition of the entire field
         self._global_inhibition = 0.0
         # input that comes from outside the system and can be used to drive the
         # field through the detection instability
         self._boost = 0.0
-        # current value of the system (initialize it with the resting level,
-        # because the field would relax to it without external input anyway)
-        self._activation = numpy.zeros(shape=self._output_dimension_sizes) + self._resting_level
 
+        # value the activation will relax to without external input
+        self._resting_level = -5.0
+        # initialize the activation with the resting level, because the field
+        # would relax to it without external input anyway)
+        self.set_initial_activation(self._resting_level)
+ 
         # controls how fast the system relaxes
         self._relaxation_time = 20.0
         # controls the steepness of the sigmoid (nonlinearity) at the zero
@@ -308,6 +309,10 @@ class DynamicField(Connectable):
         self._sigmoid_steepness = 5.0
         # controls the shift of the nonlinearity on the x-axis (sigmoid)
         self._sigmoid_shift = 0.0
+
+        # normalization factor for the activation (in case you want to set
+        # specific attractors and need to normalize)
+        self._normalization_factor = 1.0
 
         # file handle for the activation log
         self._activation_log_file = None
@@ -357,6 +362,9 @@ class DynamicField(Connectable):
     def set_resting_level(self, resting_level):
         self._resting_level = resting_level
 
+    def set_initial_activation(self, initial_activation):
+        self._activation = numpy.zeros(shape=self._output_dimension_sizes) + initial_activation
+
     def get_boost(self):
         return self._boost
 
@@ -389,6 +397,12 @@ class DynamicField(Connectable):
 
     def set_sigmoid_shift(self, shift):
         self._sigmoid_shift = shift
+
+    def set_normalization_factor(self, factor):
+        self._normalization_factor = factor
+
+    def get_normalization_factor(self):
+        return self._normalization_factor
 
     def get_output(self, activation=None):
         """Compute the output of the field. By default, the current value of the
@@ -431,7 +445,7 @@ class DynamicField(Connectable):
         global_inhibition = self._global_inhibition * sigmoid(activation, 5.0, 0.0).sum() / math_tools.product(self._output_dimension_sizes)
 
         # compute the change of the system
-        change = relaxation_time_factor * (- activation
+        change = relaxation_time_factor * (- self._normalization_factor * activation
                      + self._resting_level
                      + self._boost
                      - global_inhibition

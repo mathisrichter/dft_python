@@ -13,6 +13,7 @@ import math_tools
 
 
 def main():
+
     # create a task node
     task_node = DynamicField.DynamicField([], [], None)
     task_node.set_boost(10)
@@ -25,13 +26,6 @@ def main():
                                                 field_sizes=[[find_color_field_size]],
                                                 field_resolutions=[],
                                                 int_node_to_int_field_weight=find_color_int_weight,
-                                                int_node_to_cos_node_weight=2.0,
-                                                int_field_to_cos_field_weight=2.5,
-                                                cos_field_to_cos_node_weight=3.0,
-                                                cos_node_to_cos_memory_node_weight=2.5,
-                                                int_inhibition_weight=-6.0,
-                                                reactivating=False,
-                                                log_activation=False,
                                                 name="find color")
 
     # create elementary behavior: move end effector
@@ -41,13 +35,6 @@ def main():
                                                 field_sizes=[[move_ee_field_sizes[0]],[move_ee_field_sizes[1]]],
                                                 field_resolutions=[],
                                                 int_node_to_int_field_weight=move_ee_int_weight,
-                                                int_node_to_cos_node_weight=2.0,
-                                                int_field_to_cos_field_weight=2.5,
-                                                cos_field_to_cos_node_weight=3.0,
-                                                cos_node_to_cos_memory_node_weight=2.5,
-                                                int_inhibition_weight=-6.0,
-                                                reactivating=False,
-                                                log_activation=False,
                                                 name="move ee")
 
     # create gripper intention and cos fields
@@ -79,12 +66,6 @@ def main():
     gripper_close = BehOrg.ElementaryBehavior(intention_field=gripper_intention_field,
                                               cos_field=gripper_cos_field,
                                               int_node_to_int_field_weight=gripper_close_int_weight,
-                                              int_node_to_cos_node_weight=2.0,
-                                              cos_field_to_cos_node_weight=3.0,
-                                              cos_node_to_cos_memory_node_weight=2.5,
-                                              int_inhibition_weight=-6.0,
-                                              reactivating=False,
-                                              log_activation=False,
                                               name="gripper close")
 
     # create elementary behavior: gripper open
@@ -92,22 +73,18 @@ def main():
     gripper_open = BehOrg.ElementaryBehavior(intention_field=gripper_intention_field,
                                               cos_field=gripper_cos_field,
                                               int_node_to_int_field_weight=gripper_open_int_weight,
-                                              int_node_to_cos_node_weight=2.0,
-                                              cos_field_to_cos_node_weight=3.0,
-                                              cos_node_to_cos_memory_node_weight=2.5,
-                                              int_inhibition_weight=-6.0,
-                                              reactivating=False,
-                                              log_activation=False,
                                               name="gripper open")
     gripper_intention_field.set_name("gripper_intention_field")
     gripper_cos_field.set_name("gripper_cos_field")
 
 
+    # connect all elementary behaviors to the task node
     BehOrg.connect_to_task(task_node, find_color)
     BehOrg.connect_to_task(task_node, move_ee)
     BehOrg.connect_to_task(task_node, gripper_open)
     BehOrg.connect_to_task(task_node, gripper_close)
 
+    # create precondition nodes
     gripper_open_precondition_node = BehOrg.precondition(gripper_open, move_ee, task_node)
     gripper_close_precondition_node = BehOrg.precondition(move_ee, gripper_close, task_node)
 
