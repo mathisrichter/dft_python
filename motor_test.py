@@ -17,13 +17,17 @@ import time
 
 
 def main():
+    print_output = False
+    move_nao = True
 
     motion_proxy = ALProxy("ALMotion", "192.168.0.102", 9559)
-    motion_proxy.setStiffnesses("RArm", 1.0)
+    initial_x = 0.05
+    initial_y = -0.10
+    initial_z = 0.0
 
-    motion_proxy.positionInterpolation("RArm", 0, [0.05, -0.25, 0.10, 0, 0, 0], 7, 4, True)
-
-    print_output = False
+    if (move_nao):
+        motion_proxy.setStiffnesses("RArm", 1.0)
+        motion_proxy.positionInterpolation("RArm", 0, [initial_x, initial_y, initial_z, 0, 0, 0], 7, 3, True)
 
     # create a task node
     task_node = DynamicField.DynamicField([], [], None)
@@ -32,12 +36,14 @@ def main():
     # create a motor node
     motor_node_x = DynamicField.DynamicField([], [], None)
     motor_node_x.set_resting_level(0.)
-    motor_node_x.set_initial_activation(0.05)
+    motor_node_x.set_initial_activation(initial_x)
     motor_node_x.set_noise_strength(0.0)
+    motor_node_x.set_relaxation_time(60.)
     motor_node_y = DynamicField.DynamicField([], [], None)
     motor_node_y.set_resting_level(0.)
-    motor_node_y.set_initial_activation(-0.25)
+    motor_node_y.set_initial_activation(initial_y)
     motor_node_y.set_noise_strength(0.0)
+    motor_node_y.set_relaxation_time(60.)
 
     # create elementary behavior: move end effector
     move_ee_field_sizes = [50, 50]
@@ -76,7 +82,8 @@ def main():
         move_ee_int_field_activation = move_ee_int_field.get_activation()
 
         if (i == 100):
-            move_ee_boost = math_tools.gauss_2d(move_ee_int_field_activation.shape, amplitude=9.5, sigmas=[2.0, 2.0], shifts=[20,2])
+            print "time to boost!"
+            move_ee_boost = math_tools.gauss_2d(move_ee_int_field_activation.shape, amplitude=9.5, sigmas=[2.0, 2.0], shifts=[10,0])
             move_ee_int_field.set_boost(move_ee_boost)
 
         move_ee_int_field_activation_x = move_ee_int_field_activation.max(1)
@@ -92,8 +99,8 @@ def main():
             print move_ee_int_field_output_y.sum()
 
 
-        motor_node_x.set_normalization_factor(move_ee_int_field_output_x.sum()/100.)
-        motor_node_y.set_normalization_factor(move_ee_int_field_output_y.sum()/100.)
+        motor_node_x.set_normalization_factor(move_ee_int_field_output_x.sum())
+        motor_node_y.set_normalization_factor(move_ee_int_field_output_y.sum())
 
         if (print_output):
             print "field x:"
@@ -115,8 +122,8 @@ def main():
             print "ramp y:"
             print ramp_y
 
-        force_x = numpy.dot(move_ee_int_field_output_x/100., ramp_x)
-        force_y = numpy.dot(move_ee_int_field_output_y/-100., ramp_y)
+        force_x = numpy.dot(move_ee_int_field_output_x, ramp_x) / 100.
+        force_y = numpy.dot(move_ee_int_field_output_y, ramp_y) / -100.
 
         if (print_output):
             print "force x:"
@@ -140,8 +147,9 @@ def main():
         motor_node_x.step()
         motor_node_y.step()
 
-        motion_proxy.changePosition("RArm", 0, [x_dot, y_dot, z_dot, 0.0, 0.0, 0.0], 0.2, 7)
-        time.sleep(0.03)
+        if (move_nao):
+            motion_proxy.changePosition("RArm", 0, [x_dot, y_dot, z_dot, 0.0, 0.0, 0.0], 0.5, 7)
+            time.sleep(0.03)
 
         if (print_output):
             print "motor node x activation:"
