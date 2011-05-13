@@ -8,6 +8,9 @@ def product(value_list):
 
     return product
 
+def sigmoid(x, beta, x0):
+    return 1./ (1. + numpy.exp(-beta * (x - x0)))
+
 def gauss_value(position, sigma, shift):
     return math.exp(- math.pow(position - shift, 2.0) / (2 * math.pow(sigma, 2.0)))
 

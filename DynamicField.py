@@ -6,9 +6,6 @@ import copy
 import scipy.interpolate
 import math_tools
 
-def sigmoid(x, beta, x0):
-    return 1./ (1. + numpy.exp(-beta * (x - x0)))
-
 class ConnectError(Exception):
     def __init__(self, value):
         self.value = value
@@ -156,7 +153,7 @@ class Connectable:
         # list of connected objects that receive input from this connectable (outgoing)
         self._outgoing_connectables = []
         # the buffer for the output
-        self._output_buffer = 0.0
+        self._output_buffer = 0.
         
         # dimensionality of the input
         self._input_dimensionality = None
@@ -314,6 +311,9 @@ class DynamicField(Connectable):
         # specific attractors and need to normalize)
         self._normalization_factor = 1.0
 
+        # initialize the output buffer with an ndarray
+        self._output_buffer = self.compute_thresholded_activation(self._activation)
+
         # file handle for the activation log
         self._activation_log_file = None
 
@@ -404,25 +404,35 @@ class DynamicField(Connectable):
     def get_normalization_factor(self):
         return self._normalization_factor
 
-    def get_output(self, activation=None):
-        """Compute the output of the field. By default, the current value of the
-        field is used, but a different value can be supplied to compute the
-        output for an arbitrary value."""
-        # if the current value is not supplied..
-        if activation is None:
-            # ..set it to the current activation of the field
-            activation = self._activation
+    def compute_thresholded_activation(self, activation):
+        "Applies the sigmoidal function to the given activation."
+        return math_tools.sigmoid(activation, self._sigmoid_steepness, self._sigmoid_shift)
 
-        return sigmoid(activation, self._sigmoid_steepness, self._sigmoid_shift)
+    def get_output(self, activation=None):
+        """Returns the output of the dynamical field. By default, the current
+        output buffer is returned. If an specific activation is given, it is
+        run through the nonlinearity and returned."""
+        thresholded_activation = self._output_buffer
+
+        if (activation is not None):
+            thresholded_activation = self.compute_thresholded_activation(activation)
+
+        return thresholded_activation
 
     def get_change(self, activation=None, use_time_scale=True):
         """Compute the next change to the system. By default, the current value
         of the field is used, but a different value can be supplied to compute
         the output for an arbitrary value. When use_time_scale is set to False,
         the time scale is not considered when computing the change."""
-        # if the current value is not supplied..
+        # get the current output of the dynamic field
+        current_output = self.get_output()
+
+        # if a specific current activation is supplied..
         if activation is None:
-            # ..set it to the current value of the field
+            # .. compute the output given this activation
+            current_output = self.get_output(activation)
+        else:
+            # ..otherwise set the activation to the current value of the field
             activation = self._activation
 
         # if the time scale is to be used..
@@ -435,14 +445,14 @@ class DynamicField(Connectable):
 
         # compute the lateral interaction
         if self._lateral_interaction_kernel is not None:
-            self._lateral_interaction = Kernel.convolve(self.get_output(activation), self._lateral_interaction_kernel)
+            self._lateral_interaction = Kernel.convolve(current_output, self._lateral_interaction_kernel)
 
         # sum up the input coming in from all connected fields
         field_interaction = 0
         for connectable in self.get_incoming_connectables():
             field_interaction += connectable.get_output()
 
-        global_inhibition = self._global_inhibition * sigmoid(activation, 5.0, 0.0).sum() / math_tools.product(self._output_dimension_sizes)
+        global_inhibition = self._global_inhibition * current_output.sum() / math_tools.product(self._output_dimension_sizes)
 
         # compute the change of the system
         change = relaxation_time_factor * (- self._normalization_factor * activation
@@ -458,6 +468,7 @@ class DynamicField(Connectable):
         """Compute the current change of the system and change to current value
         accordingly."""
         self._activation += self.get_change(self._activation) + self._noise_strength * (random.random() - 0.5)
+        self._output_buffer = self.compute_thresholded_activation(self._activation)
         self.write_activation_log()
 
     def start_activation_log(self, file_name=""):

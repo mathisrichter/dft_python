@@ -10,7 +10,7 @@ from mpl_toolkits.axes_grid import ImageGrid
 from mpl_toolkits.axes_grid import make_axes_locatable
 import plot_settings
 import math_tools
-import vision_test
+import CameraField
 
 
 def main():
@@ -44,19 +44,19 @@ def main():
 
     # gripper intention field and its kernel
     intention_field_kernel = Kernel.GaussKernel(gripper_field_dimensionality)
-    intention_field_kernel.add_mode(5.5, [1.0] * gripper_field_dimensionality, [0.0] * gripper_field_dimensionality)
-    intention_field_kernel.add_mode(-5.5, [3.0] * gripper_field_dimensionality, [0.0] * gripper_field_dimensionality)
+    intention_field_kernel.add_mode(7.5, [1.0] * gripper_field_dimensionality, [0.0] * gripper_field_dimensionality)
+#    intention_field_kernel.add_mode(-5.5, [3.0] * gripper_field_dimensionality, [0.0] * gripper_field_dimensionality)
     intention_field_kernel.calculate()
     gripper_intention_field = DynamicField.DynamicField([[gripper_field_size]], [], intention_field_kernel)
-    gripper_intention_field.set_global_inhibition(7.5)
+    gripper_intention_field.set_global_inhibition(300.0)
 
     # gripper CoS field and its kernel
     cos_field_kernel = Kernel.GaussKernel(gripper_field_dimensionality)
-    cos_field_kernel.add_mode(5.5, [1.0] * gripper_field_dimensionality, [0.0] * gripper_field_dimensionality)
-    cos_field_kernel.add_mode(-5.5, [3.0] * gripper_field_dimensionality, [0.0] * gripper_field_dimensionality)
+    cos_field_kernel.add_mode(7.5, [1.0] * gripper_field_dimensionality, [0.0] * gripper_field_dimensionality)
+#    cos_field_kernel.add_mode(-5.5, [3.0] * gripper_field_dimensionality, [0.0] * gripper_field_dimensionality)
     cos_field_kernel.calculate()
     gripper_cos_field = DynamicField.DynamicField([[gripper_field_size]], [], cos_field_kernel)
-    gripper_cos_field.set_global_inhibition(7.5)
+    gripper_cos_field.set_global_inhibition(300.0)
 
     # connect the gripper intention and CoS field
     gripper_int_field_to_cos_field_weight = DynamicField.Weight(2.5)
@@ -92,13 +92,13 @@ def main():
     # create perception color-space field
     color_space_field_dimensionality = 3
     color_space_kernel = Kernel.GaussKernel(color_space_field_dimensionality)
-    color_space_kernel.add_mode(5.5, [1.0] * color_space_field_dimensionality, [0.0] * color_space_field_dimensionality)
-    color_space_kernel.add_mode(-5.5, [3.0] * color_space_field_dimensionality, [0.0] * color_space_field_dimensionality)
+    color_space_kernel.add_mode(7.5, [1.0] * color_space_field_dimensionality, [0.0] * color_space_field_dimensionality)
+#    color_space_kernel.add_mode(-5.5, [3.0] * color_space_field_dimensionality, [0.0] * color_space_field_dimensionality)
     color_space_kernel.calculate()
 
     color_space_field_sizes = [move_ee_field_sizes[0], move_ee_field_sizes[1], find_color_field_size]
     color_space_field = DynamicField.DynamicField([[color_space_field_sizes[0]],[color_space_field_sizes[1]],[color_space_field_sizes[2]]], [], color_space_kernel)
-    color_space_field.set_global_inhibition(7.5)
+    color_space_field.set_global_inhibition(300.0)
     color_space_field.set_name("color_space_field")
 
     fc_int_to_color_space_projection = DynamicField.Projection(find_color.get_intention_field().get_dimensionality(), color_space_field_dimensionality, set([0]), [2])
@@ -115,23 +115,23 @@ def main():
 #    camera_field_sizes = color_space_field_sizes
 #    camera_field = DynamicField.DynamicField([[camera_field_sizes[0]], [camera_field_sizes[1]], [camera_field_sizes[2]]], [], None)
     camera_field_sizes = [move_ee_field_sizes[0], move_ee_field_sizes[1], find_color_field_size]
-    camera_field = vision_test.CameraField()
+    camera_field = CameraField.DummyCameraField()
     camera_field.set_name("camera_field")
 
     camera_to_color_space_weight = DynamicField.Weight(4.0)
-    DynamicField.connect(camera_field, color_space_field, [camera_to_color_space_weight])
+#    DynamicField.connect(camera_field, color_space_field, [camera_to_color_space_weight])
 
     # create "spatial target location" field
     spatial_target_field_dimensionality = 2
     spatial_target_kernel = Kernel.GaussKernel(spatial_target_field_dimensionality)
     spatial_target_kernel = Kernel.GaussKernel(spatial_target_field_dimensionality)
-    spatial_target_kernel.add_mode(5.5, [1.0] * spatial_target_field_dimensionality, [0.0] * spatial_target_field_dimensionality)
-    spatial_target_kernel.add_mode(-5.5, [3.0] * spatial_target_field_dimensionality, [0.0] * spatial_target_field_dimensionality)
+    spatial_target_kernel.add_mode(7.5, [1.0] * spatial_target_field_dimensionality, [0.0] * spatial_target_field_dimensionality)
+#    spatial_target_kernel.add_mode(-5.5, [3.0] * spatial_target_field_dimensionality, [0.0] * spatial_target_field_dimensionality)
     spatial_target_kernel.calculate()
 
     spatial_target_field_sizes = move_ee_field_sizes
     spatial_target_field = DynamicField.DynamicField([[spatial_target_field_sizes[0]], [spatial_target_field_sizes[1]]], [], spatial_target_kernel)
-    spatial_target_field.set_global_inhibition(7.5)
+    spatial_target_field.set_global_inhibition(300.0)
     spatial_target_field.set_name("spatial_target_field")
 
     color_space_to_spatial_target_projection = DynamicField.Projection(color_space_field_dimensionality, spatial_target_field_dimensionality, set([0, 1]), [0, 1])
@@ -145,13 +145,13 @@ def main():
     perception_ee_field_dimensionality = 2
     perception_ee_kernel = Kernel.GaussKernel(perception_ee_field_dimensionality)
     perception_ee_kernel = Kernel.GaussKernel(perception_ee_field_dimensionality)
-    perception_ee_kernel.add_mode(5.5, [1.0] * perception_ee_field_dimensionality, [0.0] * perception_ee_field_dimensionality)
-    perception_ee_kernel.add_mode(-5.5, [3.0] * perception_ee_field_dimensionality, [0.0] * perception_ee_field_dimensionality)
+    perception_ee_kernel.add_mode(7.5, [1.0] * perception_ee_field_dimensionality, [0.0] * perception_ee_field_dimensionality)
+#    perception_ee_kernel.add_mode(-5.5, [3.0] * perception_ee_field_dimensionality, [0.0] * perception_ee_field_dimensionality)
     perception_ee_kernel.calculate()
 
     perception_ee_field_sizes = move_ee_field_sizes
     perception_ee_field = DynamicField.DynamicField([[perception_ee_field_sizes[0]], [perception_ee_field_sizes[1]]], [], perception_ee_kernel)
-    perception_ee_field.set_global_inhibition(7.5)
+    perception_ee_field.set_global_inhibition(300.0)
     perception_ee_field.set_name("perception_ee_field")
 
     perception_ee_to_move_ee_cos_weight = DynamicField.Weight(3.5)
@@ -159,7 +159,7 @@ def main():
 
 
 
-    time_steps = 10
+    time_steps = 300
 
     task_node_activation = [0] * time_steps
 
@@ -217,10 +217,10 @@ def main():
 #            camera_boost_2 = math_tools.gauss_3d(camera_field_sizes, amplitude=9.0, sigmas=[2.0, 2.0, 2.0], shifts=[30,40,45])
 #            camera_boost = camera_boost_0 + camera_boost_1 + camera_boost_2
 #            camera_field.set_boost(camera_boost)
-        if (i == 5):
-            camera_field.start_activation_log()
-            camera_field.write_activation_log()
-            camera_field.stop_activation_log()
+#        if (i == 5):
+#            camera_field.start_activation_log()
+#            camera_field.write_activation_log()
+#            camera_field.stop_activation_log()
 
         if (i == 380):
             fields = [find_color.get_intention_field(),

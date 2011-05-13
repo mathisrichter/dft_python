@@ -172,19 +172,19 @@ class ElementaryBehavior:
 
         # intention field and its kernel
         intention_field_kernel = Kernel.GaussKernel(field_dimensionality)
-        intention_field_kernel.add_mode(5.5, [1.0] * field_dimensionality, [0.0] * field_dimensionality)
-        intention_field_kernel.add_mode(-5.5, [3.0] * field_dimensionality, [0.0] * field_dimensionality)
+        intention_field_kernel.add_mode(7.5, [1.0] * field_dimensionality, [0.0] * field_dimensionality)
+#        intention_field_kernel.add_mode(-5.5, [3.0] * field_dimensionality, [0.0] * field_dimensionality)
         intention_field_kernel.calculate()
         intention_field = DynamicField.DynamicField(field_sizes, field_resolutions, intention_field_kernel)
-        intention_field.set_global_inhibition(7.5)
+        intention_field.set_global_inhibition(300.0)
 
         # CoS field and its kernel
         cos_field_kernel = Kernel.GaussKernel(field_dimensionality)
-        cos_field_kernel.add_mode(5.5, [1.0] * field_dimensionality, [0.0] * field_dimensionality)
-        cos_field_kernel.add_mode(-5.5, [3.0] * field_dimensionality, [0.0] * field_dimensionality)
+        cos_field_kernel.add_mode(7.5, [1.0] * field_dimensionality, [0.0] * field_dimensionality)
+#        cos_field_kernel.add_mode(-5.5, [3.0] * field_dimensionality, [0.0] * field_dimensionality)
         cos_field_kernel.calculate()
         cos_field = DynamicField.DynamicField(field_sizes, field_resolutions, cos_field_kernel)
-        cos_field.set_global_inhibition(7.5)
+        cos_field.set_global_inhibition(300.0)
 
         # connect intention field to cos field
         weight = DynamicField.Weight(int_field_to_cos_field_weight)

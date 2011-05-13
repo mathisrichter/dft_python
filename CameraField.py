@@ -3,7 +3,7 @@ from naoqi import ALProxy
 import numpy
 import DynamicField
 
-class CameraField(DynamicField.DynamicField):
+class NaoCameraField(DynamicField.DynamicField):
     "Camera field"
 
     def __init__(self):
@@ -29,4 +29,17 @@ class CameraField(DynamicField.DynamicField):
                 self._activation[i][j] = -5.
                 self._activation[i][j][color] = 5.
 
-        print "stepped camera field"
+class DummyCameraField(DynamicField.DynamicField):
+    "Camera field"
+
+    def __init__(self):
+        "Constructor"
+        DynamicField.DynamicField.__init__(self, dimension_bounds = [[160],[120],[50]])
+        camera_field_file = open("snapshots/camera_field.txt", 'r')
+        activation = numpy.fromfile(camera_field_file, sep=', ')
+        camera_field_file.close()
+        self._activation = activation.reshape(160,120,50)
+        self._output_buffer = self.compute_thresholded_activation(self._activation)
+
+    def _step_computation(self):
+        pass
