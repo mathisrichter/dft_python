@@ -10,6 +10,7 @@ from mpl_toolkits.axes_grid import ImageGrid
 from mpl_toolkits.axes_grid import make_axes_locatable
 import plot_settings
 import math_tools
+import vision_test
 
 
 def main():
@@ -20,7 +21,7 @@ def main():
 
     # create elementary behavior: find color
     find_color_field_size = 50
-    find_color_int_weight = math_tools.gauss_1d(find_color_field_size, amplitude=8.0, sigma=2.0, shift=10)
+    find_color_int_weight = math_tools.gauss_1d(find_color_field_size, amplitude=8.0, sigma=2.0, shift=0)
 
     find_color = BehOrg.ElementaryBehavior.with_internal_fields(field_dimensionality=1,
                                                 field_sizes=[[find_color_field_size]],
@@ -29,7 +30,7 @@ def main():
                                                 name="find color")
 
     # create elementary behavior: move end effector
-    move_ee_field_sizes = [50, 50]
+    move_ee_field_sizes = [160, 120]
     move_ee_int_weight = numpy.ones((move_ee_field_sizes)) * 2.0
     move_ee = BehOrg.ElementaryBehavior.with_internal_fields(field_dimensionality=2,
                                                 field_sizes=[[move_ee_field_sizes[0]],[move_ee_field_sizes[1]]],
@@ -111,8 +112,10 @@ def main():
     # create "camera" field
     camera_dimensionality = 3
 
-    camera_field_sizes = color_space_field_sizes
-    camera_field = DynamicField.DynamicField([[camera_field_sizes[0]], [camera_field_sizes[1]], [camera_field_sizes[2]]], [], None)
+#    camera_field_sizes = color_space_field_sizes
+#    camera_field = DynamicField.DynamicField([[camera_field_sizes[0]], [camera_field_sizes[1]], [camera_field_sizes[2]]], [], None)
+    camera_field_sizes = [move_ee_field_sizes[0], move_ee_field_sizes[1], find_color_field_size]
+    camera_field = vision_test.CameraField()
     camera_field.set_name("camera_field")
 
     camera_to_color_space_weight = DynamicField.Weight(4.0)
@@ -156,7 +159,7 @@ def main():
 
 
 
-    time_steps = 1000
+    time_steps = 10
 
     task_node_activation = [0] * time_steps
 
@@ -208,12 +211,16 @@ def main():
 
     for i in range(time_steps):
 
-        if (i == 150):
-            camera_boost_0 = math_tools.gauss_3d(camera_field_sizes, amplitude=9.5, sigmas=[2.0, 2.0, 2.0], shifts=[10,30,10])
-            camera_boost_1 = math_tools.gauss_3d(camera_field_sizes, amplitude=9.0, sigmas=[2.0, 2.0, 2.0], shifts=[40,25,30])
-            camera_boost_2 = math_tools.gauss_3d(camera_field_sizes, amplitude=9.0, sigmas=[2.0, 2.0, 2.0], shifts=[30,40,45])
-            camera_boost = camera_boost_0 + camera_boost_1 + camera_boost_2
-            camera_field.set_boost(camera_boost)
+#        if (i == 150):
+#            camera_boost_0 = math_tools.gauss_3d(camera_field_sizes, amplitude=9.5, sigmas=[2.0, 2.0, 2.0], shifts=[10,30,10])
+#            camera_boost_1 = math_tools.gauss_3d(camera_field_sizes, amplitude=9.0, sigmas=[2.0, 2.0, 2.0], shifts=[40,25,30])
+#            camera_boost_2 = math_tools.gauss_3d(camera_field_sizes, amplitude=9.0, sigmas=[2.0, 2.0, 2.0], shifts=[30,40,45])
+#            camera_boost = camera_boost_0 + camera_boost_1 + camera_boost_2
+#            camera_field.set_boost(camera_boost)
+        if (i == 5):
+            camera_field.start_activation_log()
+            camera_field.write_activation_log()
+            camera_field.stop_activation_log()
 
         if (i == 380):
             fields = [find_color.get_intention_field(),
