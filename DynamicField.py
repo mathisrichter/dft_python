@@ -573,19 +573,13 @@ class Scaler(Connectable):
         elif (input.ndim == 1):
             self._interpolate_1d(input)
         else:
-            self._interpolate_nd_linear(input, input.ndim)
+            self._interpolate_nd_linear(input)
 
     def _interpolate_0d(self, activation):
         self._output_buffer = activation
 
     def _interpolate_1d(self, activation):
-        x = range(len(activation))
-        f = scipy.interpolate.interp1d(x, activation)
-
-        number_of_steps = complex(0, self._output_dimension_sizes[0])
-        grid = numpy.mgrid[0:len(activation)-1:number_of_steps]
-
-        self._output_buffer = f(grid)
+        self._output_buffer = math_tools.linear_interpolation_1d(activation, self._output_dimension_sizes[0])
 
     def _interpolate_2d_spline(self, activation):
         x, y = numpy.mgrid[0:activation.shape[0], 0:activation.shape[1]]
@@ -600,36 +594,10 @@ class Scaler(Connectable):
         self._output_buffer = scipy.interpolate.bisplev(x_new[:,0], y_new[0,:], spline_rep)
 
     def _interpolate_2d_linear_custom(self, activation):
-        old_dim0_size = len(activation)
-        tmp = numpy.zeros((old_dim0_size, self._output_dimension_sizes[1]))
-        xp0 = range(len(activation[0]))
-        for i in range(old_dim0_size):
-            tmp[i] = numpy.interp(numpy.arange(0,
-                                  len(xp0),
-                                  float(len(xp0))/float(self._output_dimension_sizes[1])),
-                                  xp0,
-                                  activation[i])
+        self._output_buffer = math_tools.linear_interpolation_2d_custom(activation, self._output_dimension_sizes)
 
-        tmp = tmp.transpose()
-
-        old_dim0_size = len(tmp)
-        self._output_buffer = numpy.zeros((self._output_dimension_sizes[1], self._output_dimension_sizes[0]))
-        xp0 = range(len(tmp[0]))
-        for i in range(old_dim0_size): 
-            self._output_buffer[i] = numpy.interp(numpy.arange(0,
-                                                  len(xp0),
-                                                  float(len(xp0))/float(self._output_dimension_sizes[0])),
-                                                  xp0,
-                                                  tmp[i])
-        self._output_buffer = self._output_buffer.transpose()
-
-    def _interpolate_nd_linear(self, activation, dimensionality):
-        coord_ranges = [range(activation.shape[i]) for i in range(dimensionality)]
-        linear_interpolator = scipy.interpolate.LinearNDInterpolator(cartesian(coord_ranges), activation.flatten())
-
-        coord_ranges_new = [numpy.linspace(0, activation.shape[i]-1, num=self._output_dimension_sizes[i]) for i in range(dimensionality)]
-        x_new = cartesian(coord_ranges_new)
-        self._output_buffer = linear_interpolator(x_new).reshape(self._output_dimension_sizes)
+    def _interpolate_nd_linear(self, activation):
+        self._output_buffer = math_tools.linear_interpolation_nd(activation, self._output_dimension_sizes)
 
     def determine_output_dimension_sizes(self):
         pass
@@ -844,56 +812,5 @@ class Projection(Connectable):
             inverse_permutation.append(permutation.index(i))
 
         return inverse_permutation
-
-def cartesian(arrays, out=None):
-    """
-    Generate a cartesian product of input arrays.
-
-    Parameters
-    ----------
-    arrays : list of array-like
-        1-D arrays to form the cartesian product of.
-    out : ndarray
-        Array to place the cartesian product in.
-
-    Returns
-    -------
-    out : ndarray
-        2-D array of shape (M, len(arrays)) containing cartesian products
-        formed of input arrays.
-
-    Examples
-    --------
-    >>> cartesian(([1, 2, 3], [4, 5], [6, 7]))
-    array([[1, 4, 6],
-           [1, 4, 7],
-           [1, 5, 6],
-           [1, 5, 7],
-           [2, 4, 6],
-           [2, 4, 7],
-           [2, 5, 6],
-           [2, 5, 7],
-           [3, 4, 6],
-           [3, 4, 7],
-           [3, 5, 6],
-           [3, 5, 7]])
-
-    http://stackoverflow.com/questions/1208118/using-numpy-to-build-an-array-of-all-combinations-of-two-arrays
-    """
-
-    arrays = [numpy.asarray(x) for x in arrays]
-    dtype = arrays[0].dtype
-
-    n = numpy.prod([x.size for x in arrays])
-    if out is None:
-        out = numpy.zeros([n, len(arrays)], dtype=dtype)
-
-    m = n / arrays[0].size
-    out[:,0] = numpy.repeat(arrays[0], m)
-    if arrays[1:]:
-        cartesian(arrays[1:], out=out[0:m,1:])
-        for j in range(1, arrays[0].size):
-            out[j*m:(j+1)*m,1:] = out[0:m,1:]
-    return out
 
 
