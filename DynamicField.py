@@ -428,7 +428,7 @@ class DynamicField(Connectable):
         current_output = self.get_output()
 
         # if a specific current activation is supplied..
-        if activation is None:
+        if activation is not None:
             # .. compute the output given this activation
             current_output = self.get_output(activation)
         else:
