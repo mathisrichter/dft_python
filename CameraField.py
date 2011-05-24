@@ -14,6 +14,9 @@ class NaoCameraField(DynamicField.DynamicField):
         self._vision_proxy = ALProxy("ALVideoDevice", "192.168.0.102", 9559)
         self._gvm_name = "nao vision"
         self._gvm_name = self._vision_proxy.subscribe(self._gvm_name, 0, 12, 30)
+        # switch off auto white balance
+        self._vision_proxy.setParam(12, 0)
+
         self._name = "nao_camera_field"
 
     def __del__(self):
@@ -22,19 +25,24 @@ class NaoCameraField(DynamicField.DynamicField):
     def _step_computation(self):
         naoimage = self._vision_proxy.getImageRemote(self._gvm_name)
         hsv_image = numpy.fromstring(naoimage[6], dtype=numpy.uint8)
-        hue = hsv_image[::3].reshape(120,160).transpose()
-        numpy.flipud(hue)
+        hue = hsv_image[::3].reshape(120,160)
+        saturation = hsv_image[1::3].reshape(120,160)
+        hue = numpy.rot90(hue, 3)
+        saturation = numpy.rot90(saturation, 3)
 
         sizes = self.get_input_dimension_sizes()
+        max_activation_level = 5.0
 
         hue = math_tools.linear_interpolation_2d_custom(hue, [sizes[0], sizes[1]])
+        saturation = math_tools.linear_interpolation_2d_custom(saturation, [sizes[0], sizes[1]])
         hue = numpy.round(hue * ((sizes[2] - 1)/255.)).astype(numpy.int)
+        saturation = saturation * max_activation_level/255.
 
         for i in range(sizes[0]):
             for j in range(sizes[1]):
                 color = hue[i][j]
-                self._activation[i][j] = -5.
-                self._activation[i][j][color] = 5.
+                self._activation[i][j] = -max_activation_level
+                self._activation[i][j][color] = saturation[i][j]
 
         self._output_buffer = self.compute_thresholded_activation(self._activation)
 

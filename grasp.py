@@ -28,6 +28,7 @@ def main():
                                                 field_sizes=[[find_color_field_size]],
                                                 field_resolutions=[],
                                                 int_node_to_int_field_weight=find_color_int_weight,
+                                                cos_field_to_cos_node_weight=0,# NEEDS TO BE CHANGED BACK
                                                 name="find color")
 
     # create elementary behavior: move end effector
@@ -91,12 +92,12 @@ def main():
     # create perception color-space field
     color_space_field_dimensionality = 3
     color_space_kernel = Kernel.GaussKernel(color_space_field_dimensionality)
-    color_space_kernel.add_mode(5.0, [1.0] * color_space_field_dimensionality, [0.0] * color_space_field_dimensionality)
+    color_space_kernel.add_mode(10.0, [1.0] * color_space_field_dimensionality, [0.0] * color_space_field_dimensionality)
     color_space_kernel.calculate()
 
     color_space_field_sizes = [move_ee_field_sizes[0], move_ee_field_sizes[1], find_color_field_size]
     color_space_field = DynamicField.DynamicField([[color_space_field_sizes[0]],[color_space_field_sizes[1]],[color_space_field_sizes[2]]], [], color_space_kernel)
-    color_space_field.set_global_inhibition(400.0)
+    color_space_field.set_global_inhibition(800.0)
     color_space_field.set_relaxation_time(2.0)
     color_space_field.set_name("color_space_field")
 
@@ -125,7 +126,7 @@ def main():
 
     spatial_target_field_sizes = move_ee_field_sizes
     spatial_target_field = DynamicField.DynamicField([[spatial_target_field_sizes[0]], [spatial_target_field_sizes[1]]], [], spatial_target_kernel)
-    spatial_target_field.set_global_inhibition(400.0)
+    spatial_target_field.set_global_inhibition(100.0)
     spatial_target_field.set_name("spatial_target_field")
 
     color_space_to_spatial_target_projection = DynamicField.Projection(color_space_field_dimensionality, spatial_target_field_dimensionality, set([0, 1]), [0, 1])
@@ -206,6 +207,7 @@ def main():
 
 #    perception_ee_boost = math_tools.gauss_2d(perception_ee_field_sizes, amplitude=8.0, sigmas=[2.0, 2.0], shifts=[20,5])
 #    perception_ee_field.set_boost(perception_ee_boost)
+
 
     for i in range(time_steps):
         print "time step: ", str(i)

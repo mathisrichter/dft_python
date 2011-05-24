@@ -8,6 +8,8 @@ def main():
     vision_proxy = ALProxy("ALVideoDevice", "192.168.0.102", 9559)
     gvm_name = "nao vision"
     gvm_name = vision_proxy.subscribe(gvm_name, 0, 12, 15)
+    # switch off auto white balance
+    vision_proxy.setParam(12, 0)
 
     naoimage = vision_proxy.getImageRemote(gvm_name)
     hsv_image = numpy.fromstring(naoimage[6], dtype=numpy.uint8)
@@ -19,7 +21,7 @@ def main():
     hue = math_tools.linear_interpolation_2d_custom(hue, [sizes[0], sizes[1]])
     hue = numpy.round(hue * ((sizes[2] - 1)/255.)).astype(numpy.int)
     
-    plt.imshow(hue)
+    plt.imshow(hue, vmin=0, vmax=14)
     plt.show()
 
     gvm_name = vision_proxy.unsubscribe(gvm_name)
