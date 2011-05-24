@@ -12,12 +12,12 @@ def main():
     naoimage = vision_proxy.getImageRemote(gvm_name)
     hsv_image = numpy.fromstring(naoimage[6], dtype=numpy.uint8)
     hue = hsv_image[::3].reshape(120,160)
+    print(hue.shape)
 
     sizes = [30,40,15]
 
     hue = math_tools.linear_interpolation_2d_custom(hue, [sizes[0], sizes[1]])
     hue = numpy.round(hue * ((sizes[2] - 1)/255.)).astype(numpy.int)
-
     
     plt.imshow(hue)
     plt.show()

@@ -28,19 +28,23 @@ class EndEffectorControl(DynamicField.Connectable):
         initial_end_effector_configuration = [0.05, -0.10, 0.0, 0.0, 0.0, 0.0]
         self._motion_proxy.positionInterpolation("RArm", 0, initial_end_effector_configuration, 7, 3, True)
 
+        # move the head to an initial position
+        initial_head_configuration = [0.0, 0.0]
+        self._motion_proxy.angleInterpolation("Head", initial_head_configuration, 3., True)
+
         # dynamical system that controls the pan of the head
         self._head_node_pan = DynamicField.DynamicField([], [], None)
         self._head_node_pan.set_resting_level(0.)
         self._head_node_pan.set_initial_activation(0.)
         self._head_node_pan.set_noise_strength(0.)
-        self._head_node_pan.set_relaxation_time(60.)
+        self._head_node_pan.set_relaxation_time(40.)
 
         # dynamical system that controls the tilt of the head
         self._head_node_tilt = DynamicField.DynamicField([], [], None)
         self._head_node_tilt.set_resting_level(0.)
         self._head_node_tilt.set_initial_activation(0.)
         self._head_node_tilt.set_noise_strength(0.)
-        self._head_node_tilt.set_relaxation_time(60.)
+        self._head_node_tilt.set_relaxation_time(40.)
 
         # dynamical system that controls the x-coordinate of the end effector
         self._end_effector_node_x = DynamicField.DynamicField([], [], None)
@@ -56,6 +60,10 @@ class EndEffectorControl(DynamicField.Connectable):
         self._end_effector_node_y.set_noise_strength(0.)
         self._end_effector_node_y.set_relaxation_time(60.)
 
+    def __del__(self):
+        self._motion_proxy.setStiffnesses("Head", 0.0)
+        self._motion_proxy.setStiffnesses("RArm", 0.0)
+
     def _step_computation(self):
         # extract x and y position of peak (in retinal coordinates)
         int_field_output = self.get_incoming_connectables()[0].get_output()
@@ -69,10 +77,15 @@ class EndEffectorControl(DynamicField.Connectable):
         ramp_y = range(len(int_field_output_y))
 
         # get the force values for x,y towards the peak
-        # TODO this is divided by 100 because of the size of the intention
-        # field. change to be dependent on the resolution of the field
-        head_force_x = numpy.dot(int_field_output_x, ramp_x) / 100.
-        head_force_y = numpy.dot(int_field_output_y, ramp_y) / 100.
+        head_force_x = numpy.dot(int_field_output_x, ramp_x)
+        head_force_y = numpy.dot(int_field_output_y, ramp_y)
+
+        # recompute the force in radiants for a horizontal opening angle of the
+        # camera of 48.4 deg
+        head_force_x *= -(0.8098327729 / len(int_field_output_x))
+        # recompute the force in radiants for a vertical opening angle of the
+        # camera of 34.8 deg
+        head_force_y *= -(0.6073745796 / len(int_field_output_y))
 
         self._head_node_pan.set_boost(head_force_x)
         self._head_node_tilt.set_boost(head_force_y)

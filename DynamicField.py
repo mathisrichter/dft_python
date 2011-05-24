@@ -300,7 +300,7 @@ class DynamicField(Connectable):
         self.set_initial_activation(self._resting_level)
  
         # controls how fast the system relaxes
-        self._relaxation_time = 20.0
+        self._relaxation_time = 10.0
         # controls the steepness of the sigmoid (nonlinearity) at the zero
         # crossing
         self._sigmoid_steepness = 5.0

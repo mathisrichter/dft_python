@@ -13,18 +13,17 @@ class NaoCameraField(DynamicField.DynamicField):
 
         self._vision_proxy = ALProxy("ALVideoDevice", "192.168.0.102", 9559)
         self._gvm_name = "nao vision"
-        self._gvm_name = self._vision_proxy.subscribe(self._gvm_name, 0, 12, 15)
+        self._gvm_name = self._vision_proxy.subscribe(self._gvm_name, 0, 12, 30)
         self._name = "nao_camera_field"
-        self.start_activation_log()
 
     def __del__(self):
         self._gvm_name = self._vision_proxy.unsubscribe(self._gvm_name)
-        self.stop_activation_log()
 
     def _step_computation(self):
         naoimage = self._vision_proxy.getImageRemote(self._gvm_name)
         hsv_image = numpy.fromstring(naoimage[6], dtype=numpy.uint8)
-        hue = hsv_image[::3].reshape(120,160)
+        hue = hsv_image[::3].reshape(120,160).transpose()
+        numpy.flipud(hue)
 
         sizes = self.get_input_dimension_sizes()
 
@@ -38,7 +37,6 @@ class NaoCameraField(DynamicField.DynamicField):
                 self._activation[i][j][color] = 5.
 
         self._output_buffer = self.compute_thresholded_activation(self._activation)
-        self.write_activation_log()
 
 class GaussCameraField(DynamicField.DynamicField):
     "Camera field"

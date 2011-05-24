@@ -168,21 +168,21 @@ class ElementaryBehavior:
                              name = ""):
 
         if (int_field_to_cos_field_weight is None):
-            int_field_to_cos_field_weight = 6.0
+            int_field_to_cos_field_weight = 4.0
 
         # intention field and its kernel
         intention_field_kernel = Kernel.GaussKernel(field_dimensionality)
-        intention_field_kernel.add_mode(15.0, [1.0] * field_dimensionality, [0.0] * field_dimensionality)
+        intention_field_kernel.add_mode(5.0, [1.0] * field_dimensionality, [0.0] * field_dimensionality)
         intention_field_kernel.calculate()
         intention_field = DynamicField.DynamicField(field_sizes, field_resolutions, intention_field_kernel)
-        intention_field.set_global_inhibition(400.0)
+        intention_field.set_global_inhibition(200.0)
 
         # CoS field and its kernel
         cos_field_kernel = Kernel.GaussKernel(field_dimensionality)
-        cos_field_kernel.add_mode(15.0, [1.0] * field_dimensionality, [0.0] * field_dimensionality)
+        cos_field_kernel.add_mode(5.0, [1.0] * field_dimensionality, [0.0] * field_dimensionality)
         cos_field_kernel.calculate()
         cos_field = DynamicField.DynamicField(field_sizes, field_resolutions, cos_field_kernel)
-        cos_field.set_global_inhibition(400.0)
+        cos_field.set_global_inhibition(200.0)
 
         # connect intention field to cos field
         weight = DynamicField.Weight(int_field_to_cos_field_weight)
