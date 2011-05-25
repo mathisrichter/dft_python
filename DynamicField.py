@@ -303,7 +303,7 @@ class DynamicField(Connectable):
         self._relaxation_time = 10.0
         # controls the steepness of the sigmoid (nonlinearity) at the zero
         # crossing
-        self._sigmoid_steepness = 15.0
+        self._sigmoid_steepness = 30.0
         # controls the shift of the nonlinearity on the x-axis (sigmoid)
         self._sigmoid_shift = 0.0
 

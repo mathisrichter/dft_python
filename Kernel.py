@@ -139,7 +139,7 @@ class GaussKernel(Kernel):
 
         self._modes = []
         self._separated_kernel_parts = []
-        self._limit = 0.01
+        self._limit = 0.1
 
     def add_mode(self, amplitude, steepnesses, shift):
         mode = KernelMode(amplitude, steepnesses, shift, self)

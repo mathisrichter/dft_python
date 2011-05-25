@@ -22,7 +22,7 @@ def main():
 
     # create elementary behavior: find color
     find_color_field_size = 15
-    find_color_int_weight = math_tools.gauss_1d(find_color_field_size, amplitude=15.0, sigma=2.0, shift=0)
+    find_color_int_weight = math_tools.gauss_1d(find_color_field_size, amplitude=15.0, sigma=0.5, shift=0)
 
     find_color = BehOrg.ElementaryBehavior.with_internal_fields(field_dimensionality=1,
                                                 field_sizes=[[find_color_field_size]],
@@ -32,7 +32,7 @@ def main():
                                                 name="find color")
 
     # create elementary behavior: move end effector
-    move_ee_field_sizes = [40, 30]
+    move_ee_field_sizes = [60, 45]
     move_ee_int_weight = numpy.ones((move_ee_field_sizes)) * 4.0
     move_ee = BehOrg.ElementaryBehavior.with_internal_fields(field_dimensionality=2,
                                                 field_sizes=[[move_ee_field_sizes[0]],[move_ee_field_sizes[1]]],
@@ -63,14 +63,14 @@ def main():
     DynamicField.connect(gripper_intention_field, gripper_cos_field, [gripper_int_field_to_cos_field_weight])
 
     # create elementary behavior: gripper close
-    gripper_close_int_weight = math_tools.gauss_1d(gripper_field_size, amplitude=15, sigma=2.0, shift=5)
+    gripper_close_int_weight = math_tools.gauss_1d(gripper_field_size, amplitude=15, sigma=0.5, shift=5)
     gripper_close = BehOrg.ElementaryBehavior(intention_field=gripper_intention_field,
                                               cos_field=gripper_cos_field,
                                               int_node_to_int_field_weight=gripper_close_int_weight,
                                               name="gripper close")
 
     # create elementary behavior: gripper open
-    gripper_open_int_weight = math_tools.gauss_1d(gripper_field_size, amplitude=15, sigma=2.0, shift=gripper_field_size-5)
+    gripper_open_int_weight = math_tools.gauss_1d(gripper_field_size, amplitude=15, sigma=0.5, shift=gripper_field_size-5)
     gripper_open = BehOrg.ElementaryBehavior(intention_field=gripper_intention_field,
                                               cos_field=gripper_cos_field,
                                               int_node_to_int_field_weight=gripper_open_int_weight,
@@ -121,19 +121,19 @@ def main():
     spatial_target_field_dimensionality = 2
     spatial_target_kernel = Kernel.GaussKernel(spatial_target_field_dimensionality)
     spatial_target_kernel = Kernel.GaussKernel(spatial_target_field_dimensionality)
-    spatial_target_kernel.add_mode(5.0, [1.0] * spatial_target_field_dimensionality, [0.0] * spatial_target_field_dimensionality)
+    spatial_target_kernel.add_mode(2.0, [1.0] * spatial_target_field_dimensionality, [0.0] * spatial_target_field_dimensionality)
     spatial_target_kernel.calculate()
 
     spatial_target_field_sizes = move_ee_field_sizes
     spatial_target_field = DynamicField.DynamicField([[spatial_target_field_sizes[0]], [spatial_target_field_sizes[1]]], [], spatial_target_kernel)
-    spatial_target_field.set_global_inhibition(100.0)
+    spatial_target_field.set_global_inhibition(20.0)
     spatial_target_field.set_name("spatial_target_field")
 
     color_space_to_spatial_target_projection = DynamicField.Projection(color_space_field_dimensionality, spatial_target_field_dimensionality, set([0, 1]), [0, 1])
-    color_space_to_spatial_target_weight = DynamicField.Weight(10.0)
+    color_space_to_spatial_target_weight = DynamicField.Weight(7.0)
     DynamicField.connect(color_space_field, spatial_target_field, [color_space_to_spatial_target_projection, color_space_to_spatial_target_weight])
 
-    spatial_target_to_move_ee_int_weight = DynamicField.Weight(5.0)
+    spatial_target_to_move_ee_int_weight = DynamicField.Weight(7.0)
     DynamicField.connect(spatial_target_field, move_ee.get_intention_field(), [spatial_target_to_move_ee_int_weight])
 
     # create perception field in end effector space
@@ -152,7 +152,7 @@ def main():
     DynamicField.connect(perception_ee_field, move_ee.get_cos_field(), [perception_ee_to_move_ee_cos_weight])
 
     # create end effector control connectable
-    end_effector_control = EndEffectorControl.EndEffectorControl(move_ee_field_sizes, head_speed_fraction = 0.3)
+    end_effector_control = EndEffectorControl.EndEffectorControl(move_ee_field_sizes, head_speed_fraction = 0.4)
     DynamicField.connect(move_ee.get_intention_field(), end_effector_control)
 
 
@@ -202,7 +202,7 @@ def main():
 
 
 
-    gripper_boost = math_tools.gauss_1d(gripper_field_size, amplitude=10.0, sigma=2.0, shift=gripper_field_size-5) 
+    gripper_boost = math_tools.gauss_1d(gripper_field_size, amplitude=10.0, sigma=0.5, shift=gripper_field_size-5) 
     gripper_open.get_cos_field().set_boost(gripper_boost)
 
 #    perception_ee_boost = math_tools.gauss_2d(perception_ee_field_sizes, amplitude=8.0, sigmas=[2.0, 2.0], shifts=[20,5])
@@ -239,7 +239,7 @@ def main():
                 field.stop_activation_log()
 
         if (i == 400):
-            perception_ee_boost = math_tools.gauss_2d(perception_ee_field_sizes, amplitude=8.0, sigmas=[2.0, 2.0], shifts=[5,25])
+            perception_ee_boost = math_tools.gauss_2d(perception_ee_field_sizes, amplitude=8.0, sigmas=[0.5, 0.5], shifts=[5,25])
             perception_ee_field.set_boost(perception_ee_boost)
 
 

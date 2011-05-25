@@ -52,8 +52,11 @@ def product(value_list):
 
     return product
 
-def sigmoid(x, beta, x0):
+def sigmoid_slow(x, beta, x0):
     return 1./ (1. + numpy.exp(-beta * (x - x0)))
+
+def sigmoid(x, beta, x0):
+    return 0.5 * (1.0 + beta * (x - x0) / (1.0 + beta * numpy.abs(x - x0)))
 
 def gauss_value(position, sigma, shift):
     return math.exp(- math.pow(position - shift, 2.0) / (2 * math.pow(sigma, 2.0)))
@@ -77,7 +80,7 @@ def gauss_3d(sizes, amplitude, sigmas, shifts):
     gauss = numpy.zeros(sizes)
     for i in range(sizes[0]):
         for j in range(sizes[1]):
-            for k in range(sizes[1]):
+            for k in range(sizes[2]):
                 gauss[i][j][k] = amplitude * gauss_value(i, sigmas[0], shifts[0]) * gauss_value(j, sigmas[1], shifts[1]) * gauss_value(k, sigmas[2], shifts[2])
 
     return gauss

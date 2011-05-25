@@ -21,12 +21,12 @@ class EndEffectorControl(DynamicField.Connectable):
         self._motion_proxy = ALProxy("ALMotion", "192.168.0.102", 9559)
         # set the stiffness of the head and the arm to 1.0, so they will move
         self._motion_proxy.setStiffnesses("Head", 1.0)
-        self._motion_proxy.setStiffnesses("RArm", 1.0)
+        self._motion_proxy.setStiffnesses("RArm", 0.0) # TODO CHANGE
         # move the end effector to an initial position to make grasping
         # easier
         # [position x, pos y, pos z, orientation alpha, ori beta, ori gamma]
         initial_end_effector_configuration = [0.05, -0.10, 0.0, 0.0, 0.0, 0.0]
-        self._motion_proxy.positionInterpolation("RArm", 0, initial_end_effector_configuration, 7, 3, True)
+#        self._motion_proxy.positionInterpolation("RArm", 0, initial_end_effector_configuration, 7, 3, True)
 
         # move the head to an initial position
         initial_head_configuration = [0.0, 0.0]
@@ -37,14 +37,14 @@ class EndEffectorControl(DynamicField.Connectable):
         self._head_node_pan.set_resting_level(0.)
         self._head_node_pan.set_initial_activation(0.)
         self._head_node_pan.set_noise_strength(0.)
-        self._head_node_pan.set_relaxation_time(40.)
+        self._head_node_pan.set_relaxation_time(30.)
 
         # dynamical system that controls the tilt of the head
         self._head_node_tilt = DynamicField.DynamicField([], [], None)
         self._head_node_tilt.set_resting_level(0.)
         self._head_node_tilt.set_initial_activation(0.)
         self._head_node_tilt.set_noise_strength(0.)
-        self._head_node_tilt.set_relaxation_time(40.)
+        self._head_node_tilt.set_relaxation_time(30.)
 
         # dynamical system that controls the x-coordinate of the end effector
         self._end_effector_node_x = DynamicField.DynamicField([], [], None)
