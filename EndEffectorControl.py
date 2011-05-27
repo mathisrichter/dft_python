@@ -95,8 +95,8 @@ class EndEffectorControl(DynamicField.Connectable):
         head_tilt_change = self._head_node_tilt.get_change()[0]
 
         # move the head towards the peak
-        self._motion_proxy.changeAngles("HeadYaw", head_pan_change, self._head_speed_fraction)
-        self._motion_proxy.changeAngles("HeadPitch", head_tilt_change, self._head_speed_fraction)
+#        self._motion_proxy.changeAngles("HeadYaw", head_pan_change, self._head_speed_fraction)
+#        self._motion_proxy.changeAngles("HeadPitch", head_tilt_change, self._head_speed_fraction)
 
         # step the head pan and tilt nodes
         self._head_node_pan.step()

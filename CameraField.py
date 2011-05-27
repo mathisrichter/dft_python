@@ -9,7 +9,7 @@ class NaoCameraField(DynamicField.DynamicField):
 
     def __init__(self):
         "Constructor"
-        DynamicField.DynamicField.__init__(self, dimension_bounds = [[60],[45],[15]])
+        DynamicField.DynamicField.__init__(self, dimension_bounds = [[40],[30],[15]])
 
         self._vision_proxy = ALProxy("ALVideoDevice", "192.168.0.102", 9559)
         self._gvm_name = "nao vision"

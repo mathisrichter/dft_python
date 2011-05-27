@@ -17,28 +17,34 @@ def convolve(input, kernel):
 class KernelMode:
     "Mode of a kernel"
 
-    def __init__(self, amplitude, steepnesses, shifts, kernel):
+    def __init__(self, amplitude, widths, shifts, kernel):
         self._amplitude = amplitude 
-        self._steepnesses = steepnesses
+        self._widths = widths
         self._shifts = shifts
         self._kernel = kernel
 
         dimensionality = self._kernel.get_dimensionality()
-        if len(shifts) != len(steepnesses) or len(shifts) != dimensionality:
-            print("Error. Number of shift or steepness values does not match dimensionality of the kernel.")
+        if len(shifts) != len(widths) or len(shifts) != dimensionality:
+            print("Error. Number of shift or width values does not match dimensionality of the kernel.")
             
         self._separated_kernel_parts = []
 
     def get_amplitude(self):
         return self._amplitude
 
-    def get_steepness(self, dimension_index):
+    def get_width(self, dimension_index):
         self.check_dimension_index(dimension_index)
-        return self._steepnesses[dimension_index]
+        return self._widths[dimension_index]
 
-    def get_shifts(self, dimension_index):
+    def get_widths(self):
+        return self._widths
+
+    def get_shift(self, dimension_index):
         self.check_dimension_index(dimension_index)
         return self._shifts[dimension_index]
+
+    def get_shifts(self):
+        return self._shifts
 
     def get_separated_kernel_part(self, dimension_index):
         self.check_dimension_index(dimension_index)
@@ -47,9 +53,9 @@ class KernelMode:
     def set_amplitude(self, amplitude):
         self._amplitude = amplitude
 
-    def set_steepness(self, steepness, dimension_index):
+    def set_width(self, width, dimension_index):
         self.check_dimension_index(dimension_index)
-        self._steepnesses[dimension_index] = steepness
+        self._widths[dimension_index] = width
 
     def set_shifts(self, shift, dimension_index):
         self.check_dimension_index(dimension_index)
@@ -66,7 +72,7 @@ class KernelMode:
             kernel_part = numpy.zeros(shape=kernel_width)
             for i in range(kernel_width):
                 kernel_part[i] = math.exp(-math.pow(i - center_index, 2.0) /       \
-                                         (2.0 * math.pow(self._steepnesses[dimension_index], 2.0)))
+                                         (2.0 * math.pow(self._widths[dimension_index], 2.0)))
 
             # normalize kernel part
             kernel_part *= (1. / sum(kernel_part))
@@ -141,9 +147,12 @@ class GaussKernel(Kernel):
         self._separated_kernel_parts = []
         self._limit = 0.1
 
-    def add_mode(self, amplitude, steepnesses, shift):
-        mode = KernelMode(amplitude, steepnesses, shift, self)
+    def add_mode(self, amplitude, widths, shift):
+        mode = KernelMode(amplitude, widths, shift, self)
         self._modes.append(mode)
+
+    def get_mode(self, mode_index):
+        return self._modes[mode_index]
 
     def calculate(self):
         del self._dimension_sizes[:]
@@ -159,6 +168,27 @@ class GaussKernel(Kernel):
 
             for dimension_index in range(self._dimensionality):
                 self._separated_kernel_parts[dimension_index] += mode.get_separated_kernel_part(dimension_index)
+
+    # HACKED
+    def recompute_with_parameters(self, amplitude=None, width=None, shift=None):
+        amplitude = 0.
+        widths = []
+        shifts = []
+
+        if (amplitude is None):
+            amplitude = self._modes[0].get_amplitude()
+        if (width is None):
+            widths = self._modes[0].get_widths()
+        else:
+            widths = [width] * self._dimensionality
+        if (shift is None):
+            shifts = self._modes[0].get_shifts()
+        else:
+            shifts = [shift] * self._dimensionality
+
+        self._modes = []
+        self.add_mode(amplitude, widths, shifts)
+        self.calculate
 
 #                kernel_mode_buffer = kernel_mode_buffer * 
                 
@@ -182,12 +212,12 @@ class GaussKernel(Kernel):
         
         max_width = 0
         for mode in self._modes:
-            steepness = mode.get_steepness(dimension_index)
+            width = mode.get_width(dimension_index)
             amplitude = mode.get_amplitude()
 
             width = 1
-            if (steepness < 10000 and steepness > 0):
-                width = round(math.sqrt(2.0 * math.pow(steepness, 2.0) * math.log(math.fabs(amplitude) / self._limit))) + 1
+            if (width < 10000 and width > 0):
+                width = round(math.sqrt(2.0 * math.pow(width, 2.0) * math.log(math.fabs(amplitude) / self._limit))) + 1
 
             max_width = int(max(width, max_width))
 
