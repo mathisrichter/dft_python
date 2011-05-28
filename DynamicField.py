@@ -286,7 +286,7 @@ class DynamicField(Connectable):
         self._lateral_interaction_kernel = interaction_kernel
 
         # noise strength of the system
-        self._noise_strength = 0.05
+        self._noise_strength = 0.00
         # inhibition of the entire field
         self._global_inhibition = 0.0
         # input that comes from outside the system and can be used to drive the

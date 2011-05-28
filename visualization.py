@@ -29,7 +29,6 @@ from enthought.chaco.api import ColorBar, LinearMapper
 from enthought.enable.api import Window, Component, ComponentEditor
 from enthought.traits.api import HasTraits, Instance, Range
 from enthought.traits.ui.api import Item, Group, View, Handler
-#from enthought.enable.example_support import DemoFrame, demo_main
 from enthought.pyface.timer.api import Timer
 
 # Chaco imports

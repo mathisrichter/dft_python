@@ -73,19 +73,26 @@ class EndEffectorControl(DynamicField.Connectable):
         self._head_node_pan.set_normalization_factor(int_field_output_x.sum())
         self._head_node_tilt.set_normalization_factor(int_field_output_y.sum())
 
-        ramp_x = range(len(int_field_output_x))
-        ramp_y = range(len(int_field_output_y))
+        # opening angle of the camera in x direction (48.4 deg)
+        opening_angle_x = 0.8098327729
+        # opening angle of the camera in y direction (34.8 deg)
+        opening_angle_y = 0.6073745796
 
-        # get the force values for x,y towards the peak
-        head_force_x = numpy.dot(int_field_output_x, ramp_x)
-        head_force_y = numpy.dot(int_field_output_y, ramp_y)
+        length_x = len(int_field_output_x)
+        length_y = len(int_field_output_y)
 
-        # recompute the force in radiants for a horizontal opening angle of the
-        # camera of 48.4 deg
-        head_force_x *= -(0.8098327729 / len(int_field_output_x))
-        # recompute the force in radiants for a vertical opening angle of the
-        # camera of 34.8 deg
-        head_force_y *= -(0.6073745796 / len(int_field_output_y))
+        # compute ramps for x and y direction that consist of the values of the
+        # metric dimensions along the visual field of the robot
+        ramp_x = numpy.linspace(-0.5 * length_x, 0.5 * length_x, length_x)
+        ramp_x *= opening_angle_x / length_x
+        ramp_y = numpy.linspace(-0.5 * length_y, 0.5 * length_y, length_y)
+        ramp_y *= opening_angle_y / length_y
+
+        # get the force values for x,y towards the peak.
+        # they are multiplied with -1, because the coordinate frame of the
+        # robot is inverted in both axes
+        head_force_x = -1 * numpy.dot(int_field_output_x, ramp_x)
+        head_force_y = -1 * numpy.dot(int_field_output_y, ramp_y)
 
         self._head_node_pan.set_boost(head_force_x)
         self._head_node_tilt.set_boost(head_force_y)
@@ -95,8 +102,8 @@ class EndEffectorControl(DynamicField.Connectable):
         head_tilt_change = self._head_node_tilt.get_change()[0]
 
         # move the head towards the peak
-#        self._motion_proxy.changeAngles("HeadYaw", head_pan_change, self._head_speed_fraction)
-#        self._motion_proxy.changeAngles("HeadPitch", head_tilt_change, self._head_speed_fraction)
+        self._motion_proxy.changeAngles("HeadYaw", head_pan_change, self._head_speed_fraction)
+        self._motion_proxy.changeAngles("HeadPitch", head_tilt_change, self._head_speed_fraction)
 
         # step the head pan and tilt nodes
         self._head_node_pan.step()

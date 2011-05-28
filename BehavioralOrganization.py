@@ -21,7 +21,7 @@ class GraspArchitecture():
 
         # create elementary behavior: find color
         self._find_color_field_size = 15
-        find_color_int_weight = math_tools.gauss_1d(self._find_color_field_size, amplitude=15.0, sigma=0.5, shift=0)
+        find_color_int_weight = math_tools.gauss_1d(self._find_color_field_size, amplitude=15.0, sigma=0.5, shift=5.0)
 
         self._find_color = ElementaryBehavior.with_internal_fields(field_dimensionality=1,
                                                     field_sizes=[[self._find_color_field_size]],
@@ -41,6 +41,9 @@ class GraspArchitecture():
                                                     field_resolutions=[],
                                                     int_node_to_int_field_weight=move_ee_int_weight,
                                                     name="move ee")
+        self._move_ee.get_intention_field().set_relaxation_time(2.0)
+        self._move_ee.get_cos_field().set_relaxation_time(2.0)
+
         self.fields.append(self._move_ee.get_intention_field())
         self.fields.append(self._move_ee.get_cos_field())
 
@@ -99,7 +102,7 @@ class GraspArchitecture():
         # create perception color-space field
         color_space_field_dimensionality = 3
         color_space_kernel = Kernel.GaussKernel(color_space_field_dimensionality)
-        color_space_kernel.add_mode(10.0, [1.0] * color_space_field_dimensionality, [0.0] * color_space_field_dimensionality)
+        color_space_kernel.add_mode(2.0, [1.0] * color_space_field_dimensionality, [0.0] * color_space_field_dimensionality)
         color_space_kernel.calculate()
 
         self._color_space_field_sizes = [self._move_ee_field_sizes[0], self._move_ee_field_sizes[1], self._find_color_field_size]
@@ -110,7 +113,7 @@ class GraspArchitecture():
         self.fields.append(self._color_space_field)
 
         fc_int_to_color_space_projection = DynamicField.Projection(self._find_color.get_intention_field().get_dimensionality(), color_space_field_dimensionality, set([0]), [2])
-        fc_int_to_color_space_weight = DynamicField.Weight(6.0)
+        fc_int_to_color_space_weight = DynamicField.Weight(5.0)
         DynamicField.connect(self._find_color.get_intention_field(), self._color_space_field, [fc_int_to_color_space_weight, fc_int_to_color_space_projection])
 
         color_space_to_fc_cos_projection = DynamicField.Projection(color_space_field_dimensionality, self._find_color.get_cos_field().get_dimensionality(), set([2]), [0])
@@ -123,7 +126,7 @@ class GraspArchitecture():
         self.fields.append(self._camera_field)
         self._camera_field_sizes = self._camera_field.get_output_dimension_sizes()
 
-        camera_to_color_space_weight = DynamicField.Weight(4.0)
+        camera_to_color_space_weight = DynamicField.Weight(8.0)
         DynamicField.connect(self._camera_field, self._color_space_field, [camera_to_color_space_weight])
 
         # create "spatial target location" field
@@ -135,7 +138,8 @@ class GraspArchitecture():
 
         self._spatial_target_field_sizes = self._move_ee_field_sizes
         self._spatial_target_field = DynamicField.DynamicField([[self._spatial_target_field_sizes[0]], [self._spatial_target_field_sizes[1]]], [], spatial_target_kernel)
-        self._spatial_target_field.set_global_inhibition(20.0)
+        self._spatial_target_field.set_global_inhibition(140.0)
+        self._spatial_target_field.set_relaxation_time(2.0)
         self._spatial_target_field.set_name("spatial_target_field")
         self.fields.append(self._spatial_target_field)
 
