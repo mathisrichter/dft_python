@@ -287,6 +287,8 @@ class DynamicField(Connectable):
 
         # noise strength of the system
         self._noise_strength = 0.00
+        # standard deviation of the Gaussian noise
+        self._noise_standard_deviation = 0.5
         # inhibition of the entire field
         self._global_inhibition = 0.0
         # input that comes from outside the system and can be used to drive the
@@ -355,6 +357,12 @@ class DynamicField(Connectable):
 
     def set_noise_strength(self, noise_strength):
         self._noise_strength = noise_strength
+
+    def get_noise_standard_deviation(self):
+        return self._noise_standard_deviation
+
+    def set_noise_standard_deviation(self, noise_standard_deviation):
+        self._noise_standard_deviation = noise_standard_deviation
 
     def get_resting_level(self):
         return self._resting_level
@@ -454,20 +462,24 @@ class DynamicField(Connectable):
 
         global_inhibition = self._global_inhibition * current_output.sum() / math_tools.product(self._output_dimension_sizes)
 
+        # generate the noise term
+        noise = self._noise_strength * numpy.random.normal(0.0, self._noise_standard_deviation, self._output_dimension_sizes)
+
         # compute the change of the system
         change = relaxation_time_factor * (- self._normalization_factor * activation
                      + self._resting_level
                      + self._boost
                      - global_inhibition
                      + self._lateral_interaction
-                     + field_interaction)
+                     + field_interaction
+                     + noise)
 
         return change
     
     def _step_computation(self):
         """Compute the current change of the system and change to current value
         accordingly."""
-        self._activation += self.get_change(self._activation) + self._noise_strength * (random.random() - 0.5)
+        self._activation += self.get_change(self._activation)
         self._output_buffer = self.compute_thresholded_activation(self._activation)
         self.write_activation_log()
 
