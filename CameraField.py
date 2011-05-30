@@ -36,7 +36,7 @@ class NaoCameraField(DynamicField.DynamicField):
         hue = math_tools.linear_interpolation_2d_custom(hue, [sizes[0], sizes[1]])
         saturation = math_tools.linear_interpolation_2d_custom(saturation, [sizes[0], sizes[1]])
         hue = numpy.round(hue * ((sizes[2] - 1)/255.)).astype(numpy.int)
-        saturation = saturation * max_activation_level/255.
+        saturation = saturation * (2 * max_activation_level / 255.) - max_activation_level
 
         for i in range(sizes[0]):
             for j in range(sizes[1]):

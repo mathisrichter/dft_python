@@ -7,7 +7,7 @@ import DynamicField
 import Kernel
 import math_tools
 import CameraField
-import EndEffectorControl
+import HeadControl
 
 
 class GraspArchitecture():
@@ -21,7 +21,7 @@ class GraspArchitecture():
 
         # create elementary behavior: find color
         self._find_color_field_size = 15
-        find_color_int_weight = math_tools.gauss_1d(self._find_color_field_size, amplitude=15.0, sigma=0.5, shift=5.0)
+        find_color_int_weight = math_tools.gauss_1d(self._find_color_field_size, amplitude=15.0, sigma=0.5, shift=0.0)
 
         self._find_color = ElementaryBehavior.with_internal_fields(field_dimensionality=1,
                                                     field_sizes=[[self._find_color_field_size]],
@@ -33,19 +33,40 @@ class GraspArchitecture():
         self.fields.append(self._find_color.get_intention_field())
         self.fields.append(self._find_color.get_cos_field())
 
-        # create elementary behavior: move end effector
-        self._move_ee_field_sizes = [40, 30]
-        move_ee_int_weight = numpy.ones((self._move_ee_field_sizes)) * 4.0
-        self._move_ee = ElementaryBehavior.with_internal_fields(field_dimensionality=2,
-                                                    field_sizes=[[self._move_ee_field_sizes[0]],[self._move_ee_field_sizes[1]]],
-                                                    field_resolutions=[],
-                                                    int_node_to_int_field_weight=move_ee_int_weight,
-                                                    name="move ee")
-        self._move_ee.get_intention_field().set_relaxation_time(2.0)
-        self._move_ee.get_cos_field().set_relaxation_time(2.0)
 
-        self.fields.append(self._move_ee.get_intention_field())
-        self.fields.append(self._move_ee.get_cos_field())
+        # create elementary behavior: move head
+        move_head_field_dimensionality = 2
+        self._move_head_field_sizes = [40, 30]
+
+        # gripper intention field and its kernel
+        intention_field_kernel = Kernel.GaussKernel(move_head_field_dimensionality)
+        intention_field_kernel.add_mode(10.0, [3.0] * move_head_field_dimensionality, [0.0] * move_head_field_dimensionality)
+        intention_field_kernel.calculate()
+        self._move_head_intention_field = DynamicField.DynamicField([[self._move_head_field_sizes[0]],[self._move_head_field_sizes[1]]], [], intention_field_kernel)
+        self._move_head_intention_field.set_global_inhibition(160.0)
+        self._move_head_intention_field.set_relaxation_time(2.0)
+        self._move_head_intention_field.set_name("move_head_intention_field")
+        self.fields.append(self._move_head_intention_field)
+
+        # move_head CoS field and its kernel
+        cos_field_kernel = Kernel.GaussKernel(move_head_field_dimensionality)
+        cos_field_kernel.add_mode(10.0, [3.0] * move_head_field_dimensionality, [0.0] * move_head_field_dimensionality)
+        cos_field_kernel.calculate()
+        self._move_head_cos_field = DynamicField.DynamicField([[self._move_head_field_sizes[0]],[self._move_head_field_sizes[1]]], [], cos_field_kernel)
+        self._move_head_cos_field.set_global_inhibition(160.0)
+        self._move_head_cos_field.set_relaxation_time(2.0)
+        self._move_head_cos_field.set_name("move_head_cos_field")
+        self.fields.append(self._move_head_cos_field)
+
+        # create elementary behavior: move head
+        move_head_int_weight = numpy.ones((self._move_head_field_sizes)) * 4.0
+
+        self._move_head = ElementaryBehavior(intention_field=self._move_head_intention_field,
+                                             cos_field=self._move_head_cos_field,
+                                             int_node_to_int_field_weight=move_head_int_weight,
+                                             name="move head",
+                                             step_fields=True)
+
 
         # create gripper intention and cos fields
         gripper_field_dimensionality = 1
@@ -91,21 +112,21 @@ class GraspArchitecture():
 
         # connect all elementary behaviors to the task node
         connect_to_task(self._task_node, self._find_color)
-        connect_to_task(self._task_node, self._move_ee)
+        connect_to_task(self._task_node, self._move_head)
         connect_to_task(self._task_node, self._gripper_open)
         connect_to_task(self._task_node, self._gripper_close)
 
         # create precondition nodes
-        self._gripper_open_precondition_node = precondition(self._gripper_open, self._move_ee, self._task_node)
-        self._gripper_close_precondition_node = precondition(self._move_ee, self._gripper_close, self._task_node)
+        self._gripper_open_precondition_node = precondition(self._gripper_open, self._move_head, self._task_node)
+        self._gripper_close_precondition_node = precondition(self._move_head, self._gripper_close, self._task_node)
 
         # create perception color-space field
         color_space_field_dimensionality = 3
         color_space_kernel = Kernel.GaussKernel(color_space_field_dimensionality)
-        color_space_kernel.add_mode(2.0, [1.0] * color_space_field_dimensionality, [0.0] * color_space_field_dimensionality)
+        color_space_kernel.add_mode(30.0, [3.0] * color_space_field_dimensionality, [0.0] * color_space_field_dimensionality)
         color_space_kernel.calculate()
 
-        self._color_space_field_sizes = [self._move_ee_field_sizes[0], self._move_ee_field_sizes[1], self._find_color_field_size]
+        self._color_space_field_sizes = [self._move_head_field_sizes[0], self._move_head_field_sizes[1], self._find_color_field_size]
         self._color_space_field = DynamicField.DynamicField([[self._color_space_field_sizes[0]],[self._color_space_field_sizes[1]],[self._color_space_field_sizes[2]]], [], color_space_kernel)
         self._color_space_field.set_global_inhibition(800.0)
         self._color_space_field.set_relaxation_time(2.0)
@@ -113,7 +134,7 @@ class GraspArchitecture():
         self.fields.append(self._color_space_field)
 
         fc_int_to_color_space_projection = DynamicField.Projection(self._find_color.get_intention_field().get_dimensionality(), color_space_field_dimensionality, set([0]), [2])
-        fc_int_to_color_space_weight = DynamicField.Weight(5.0)
+        fc_int_to_color_space_weight = DynamicField.Weight(6.0)
         DynamicField.connect(self._find_color.get_intention_field(), self._color_space_field, [fc_int_to_color_space_weight, fc_int_to_color_space_projection])
 
         color_space_to_fc_cos_projection = DynamicField.Projection(color_space_field_dimensionality, self._find_color.get_cos_field().get_dimensionality(), set([2]), [0])
@@ -126,29 +147,29 @@ class GraspArchitecture():
         self.fields.append(self._camera_field)
         self._camera_field_sizes = self._camera_field.get_output_dimension_sizes()
 
-        camera_to_color_space_weight = DynamicField.Weight(8.0)
+        camera_to_color_space_weight = DynamicField.Weight(9.0)
         DynamicField.connect(self._camera_field, self._color_space_field, [camera_to_color_space_weight])
 
         # create "spatial target location" field
         spatial_target_field_dimensionality = 2
         spatial_target_kernel = Kernel.GaussKernel(spatial_target_field_dimensionality)
         spatial_target_kernel = Kernel.GaussKernel(spatial_target_field_dimensionality)
-        spatial_target_kernel.add_mode(2.0, [1.0] * spatial_target_field_dimensionality, [0.0] * spatial_target_field_dimensionality)
+        spatial_target_kernel.add_mode(11.0, [3.0] * spatial_target_field_dimensionality, [0.0] * spatial_target_field_dimensionality)
         spatial_target_kernel.calculate()
 
-        self._spatial_target_field_sizes = self._move_ee_field_sizes
+        self._spatial_target_field_sizes = self._move_head_field_sizes
         self._spatial_target_field = DynamicField.DynamicField([[self._spatial_target_field_sizes[0]], [self._spatial_target_field_sizes[1]]], [], spatial_target_kernel)
-        self._spatial_target_field.set_global_inhibition(140.0)
+        self._spatial_target_field.set_global_inhibition(190.0)
         self._spatial_target_field.set_relaxation_time(2.0)
         self._spatial_target_field.set_name("spatial_target_field")
         self.fields.append(self._spatial_target_field)
 
         color_space_to_spatial_target_projection = DynamicField.Projection(color_space_field_dimensionality, spatial_target_field_dimensionality, set([0, 1]), [0, 1])
-        color_space_to_spatial_target_weight = DynamicField.Weight(7.0)
+        color_space_to_spatial_target_weight = DynamicField.Weight(9.0)
         DynamicField.connect(self._color_space_field, self._spatial_target_field, [color_space_to_spatial_target_projection, color_space_to_spatial_target_weight])
 
-        spatial_target_to_move_ee_int_weight = DynamicField.Weight(7.0)
-        DynamicField.connect(self._spatial_target_field, self._move_ee.get_intention_field(), [spatial_target_to_move_ee_int_weight])
+        spatial_target_to_move_head_int_weight = DynamicField.Weight(8.0)
+        DynamicField.connect(self._spatial_target_field, self._move_head.get_intention_field(), [spatial_target_to_move_head_int_weight])
 
         # create perception field in end effector space
         perception_ee_field_dimensionality = 2
@@ -157,18 +178,18 @@ class GraspArchitecture():
         perception_ee_kernel.add_mode(15.0, [1.0] * perception_ee_field_dimensionality, [0.0] * perception_ee_field_dimensionality)
         perception_ee_kernel.calculate()
 
-        self._perception_ee_field_sizes = self._move_ee_field_sizes
+        self._perception_ee_field_sizes = self._move_head_field_sizes
         self._perception_ee_field = DynamicField.DynamicField([[self._perception_ee_field_sizes[0]], [self._perception_ee_field_sizes[1]]], [], perception_ee_kernel)
         self._perception_ee_field.set_global_inhibition(400.0)
         self._perception_ee_field.set_name("perception_ee_field")
         self.fields.append(self._perception_ee_field)
 
-        perception_ee_to_move_ee_cos_weight = DynamicField.Weight(3.5)
-        DynamicField.connect(self._perception_ee_field, self._move_ee.get_cos_field(), [perception_ee_to_move_ee_cos_weight])
+        perception_ee_to_move_head_cos_weight = DynamicField.Weight(3.5)
+        DynamicField.connect(self._perception_ee_field, self._move_head.get_cos_field(), [perception_ee_to_move_head_cos_weight])
 
-        # create end effector control connectable
-        self._end_effector_control = EndEffectorControl.EndEffectorControl(self._move_ee_field_sizes, head_speed_fraction = 0.4)
-        DynamicField.connect(self._move_ee.get_intention_field(), self._end_effector_control)
+        # create head control connectable
+        self._head_control = HeadControl.HeadControl(self._move_head_field_sizes, head_speed_fraction = 0.4)
+        DynamicField.connect(self._move_head.get_intention_field(), self._head_control)
 
     def step(self):
         self._task_node.step()
@@ -182,8 +203,8 @@ class GraspArchitecture():
         self._gripper_open.step()
         self._gripper_close.step()
         self._gripper_open_precondition_node.step()
-        self._move_ee.step()
-        self._end_effector_control.step()
+        self._move_head.step()
+        self._head_control.step()
         self._gripper_close_precondition_node.step()
 
 
@@ -355,14 +376,14 @@ class ElementaryBehavior:
 
         # intention field and its kernel
         intention_field_kernel = Kernel.GaussKernel(field_dimensionality)
-        intention_field_kernel.add_mode(5.0, [1.0] * field_dimensionality, [0.0] * field_dimensionality)
+        intention_field_kernel.add_mode(5.0, [3.0] * field_dimensionality, [0.0] * field_dimensionality)
         intention_field_kernel.calculate()
         intention_field = DynamicField.DynamicField(field_sizes, field_resolutions, intention_field_kernel)
         intention_field.set_global_inhibition(100.0)
 
         # CoS field and its kernel
         cos_field_kernel = Kernel.GaussKernel(field_dimensionality)
-        cos_field_kernel.add_mode(5.0, [1.0] * field_dimensionality, [0.0] * field_dimensionality)
+        cos_field_kernel.add_mode(5.0, [3.0] * field_dimensionality, [0.0] * field_dimensionality)
         cos_field_kernel.calculate()
         cos_field = DynamicField.DynamicField(field_sizes, field_resolutions, cos_field_kernel)
         cos_field.set_global_inhibition(100.0)

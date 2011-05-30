@@ -18,7 +18,7 @@ import numpy
 import math
 import math_tools
 import CameraField
-import EndEffectorControl
+import HeadControl
 
 from enthought.etsconfig.etsconfig import ETSConfig
 ETSConfig.toolkit = "qt4"
@@ -94,17 +94,17 @@ class TimerController(HasTraits):
         range_self.high = 10
         range_self.low = -10
 
-        self._move_ee_intention_field_plotdata = ArrayPlotData()
-        self._move_ee_intention_field_plotdata.set_data('imagedata', self.arch._move_ee.get_intention_field().get_activation().transpose())
-        self._move_ee_intention_field_plot = Plot(self._move_ee_intention_field_plotdata)
-        self._move_ee_intention_field_plot.title = 'move ee int'
-        self._move_ee_intention_field_plot.img_plot('imagedata',
-                                  name='move_ee_intention_field',
-                                  xbounds=(0, self.arch._move_ee_field_sizes[0]-1),
-                                  ybounds=(0, self.arch._move_ee_field_sizes[1]-1),
+        self._move_head_intention_field_plotdata = ArrayPlotData()
+        self._move_head_intention_field_plotdata.set_data('imagedata', self.arch._move_head.get_intention_field().get_activation().transpose())
+        self._move_head_intention_field_plot = Plot(self._move_head_intention_field_plotdata)
+        self._move_head_intention_field_plot.title = 'move head int'
+        self._move_head_intention_field_plot.img_plot('imagedata',
+                                  name='move_head_intention_field',
+                                  xbounds=(0, self.arch._move_head_field_sizes[0]-1),
+                                  ybounds=(0, self.arch._move_head_field_sizes[1]-1),
                                   colormap=jet,
                                   )
-        range_self = self._move_ee_intention_field_plot.plots['move_ee_intention_field'][0].value_mapper.range
+        range_self = self._move_head_intention_field_plot.plots['move_head_intention_field'][0].value_mapper.range
         range_self.high = 10
         range_self.low = -10
 
@@ -118,7 +118,7 @@ class TimerController(HasTraits):
         self._container.add(self._camera_field_plot)
         self._container.add(self._color_space_field_plot)
         self._container.add(self._spatial_target_field_plot)
-        self._container.add(self._move_ee_intention_field_plot)
+        self._container.add(self._move_head_intention_field_plot)
 
     def onTimer(self, *args):
 #        print("time step: ", str(self._time_steps))
@@ -128,11 +128,11 @@ class TimerController(HasTraits):
         self._camera_field_plotdata.set_data('imagedata', self.arch._camera_field.get_activation().max(2).transpose())
         self._color_space_field_plotdata.set_data('imagedata', self.arch._color_space_field.get_activation().max(2).transpose())
         self._spatial_target_field_plotdata.set_data('imagedata', self.arch._spatial_target_field.get_activation().transpose())
-        self._move_ee_intention_field_plotdata.set_data('imagedata', self.arch._move_ee.get_intention_field().get_activation().transpose())
+        self._move_head_intention_field_plotdata.set_data('imagedata', self.arch._move_head.get_intention_field().get_activation().transpose())
         self._camera_field_plot.request_redraw()
         self._color_space_field_plot.request_redraw()
         self._spatial_target_field_plot.request_redraw()
-        self._move_ee_intention_field_plot.request_redraw()
+        self._move_head_intention_field_plot.request_redraw()
         return
 
 
@@ -258,7 +258,7 @@ class FieldControlWidget(QtGui.QWidget):
         self.label_kernel_amplitude.setObjectName("label_kernel_amplitude")
 
         self.slider_kernel_amplitude = Qwt.QwtSlider(self)
-        self.slider_kernel_amplitude.setRange(0.0, 20.0, 0.1)
+        self.slider_kernel_amplitude.setRange(0.0, 30.0, 0.1)
         self.slider_kernel_amplitude.setOrientation(Qt.Qt.Horizontal)
         self.slider_kernel_amplitude.setBgStyle(Qwt.QwtSlider.BgSlot)
         self.slider_kernel_amplitude.setObjectName("slider_kernel_amplitude")
@@ -445,10 +445,6 @@ class FieldControlWidget(QtGui.QWidget):
         self.value_kernel_amplitude.setNum(kernel_amplitude)
 
         kernel_width = self.current_field.get_lateral_interaction_kernel().get_mode(0).get_widths()[0]
-        mode = self.current_field.get_lateral_interaction_kernel().get_mode(0)
-        widths = mode.get_widths()
-        
-
         self.slider_kernel_width.setValue(kernel_width)
         self.value_kernel_width.setNum(kernel_width)
         

@@ -265,11 +265,6 @@ class DynamicField(Connectable):
             if (len(self._dimension_bounds[i]) != 2):
                 if (len(self._dimension_bounds[i]) == 1):
                     self._dimension_bounds[i].insert(0, 0)
-                    print("""Warning. You only supplied a single bound for a
-                          dimension. Since a minimum and a maximum value are
-                          expected, the value you supplied is interpreted as
-                          the maximum. The minimum is set to zero. Please
-                          supply a tuple if you did not intend for this.""")
                 else:
                     raise ConnectError("""At least one of the field's dimension
                                        bounds does not have exactly two values.
@@ -454,6 +449,12 @@ class DynamicField(Connectable):
         # compute the lateral interaction
         if self._lateral_interaction_kernel is not None:
             self._lateral_interaction = Kernel.convolve(current_output, self._lateral_interaction_kernel)
+
+#            if (isinstance(self._lateral_interaction_kernel, Kernel.GaussKernel)):
+#                print("field name: ", self._name)
+#                for i in range(self._lateral_interaction_kernel.get_dimensionality()):
+#                    print("kernel ", str(i), " :", str(self._lateral_interaction_kernel.get_separated_kernel_part(i)))
+
 
         # sum up the input coming in from all connected fields
         field_interaction = 0

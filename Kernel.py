@@ -10,7 +10,11 @@ def sigmoid(x, beta, x0):
 def convolve(input, kernel):
     convolution_result = copy.copy(input)
     for dimension_index in range(kernel.get_dimensionality()):
-        ndimage.convolve1d(convolution_result, kernel.get_separated_kernel_parts(dimension_index), axis=dimension_index, output=convolution_result, mode='wrap')
+        ndimage.convolve1d(convolution_result, \
+                           kernel.get_separated_kernel_part(dimension_index), \
+                           axis = dimension_index, \
+                           output = convolution_result, \
+                           mode = 'wrap')
 
     return convolution_result
 
@@ -67,15 +71,17 @@ class KernelMode:
         for dimension_index in range(self._kernel.get_dimensionality()):
             kernel_width = self._kernel.get_dimension_size(dimension_index)
 
-            center_index = math.floor(kernel_width / 2) + round(self._shifts[dimension_index])
+#            center_index = math.floor(kernel_width / 2.0) + round(self._shifts[dimension_index])
+            center = (kernel_width / 2.0) + self._shifts[dimension_index]
 
             kernel_part = numpy.zeros(shape=kernel_width)
+            ramp = numpy.linspace(0, kernel_width, kernel_width) 
             for i in range(kernel_width):
-                kernel_part[i] = math.exp(-math.pow(i - center_index, 2.0) /       \
+                kernel_part[i] = math.exp(-math.pow(ramp[i] - center, 2.0) /       \
                                          (2.0 * math.pow(self._widths[dimension_index], 2.0)))
 
             # normalize kernel part
-            kernel_part *= (1. / sum(kernel_part))
+            kernel_part *= (1. / kernel_part.sum())
 
             # multiply the first kernel part with the amplitude.
             # when convolving with all separated kernel parts, this will lead
@@ -106,9 +112,8 @@ class Kernel:
     def get_dimensionality(self):
         return self._dimensionality
     
-    def get_separated_kernel_parts(self, dimension_index):
+    def get_separated_kernel_part(self, dimension_index):
         pass
-    
     
 
 class BoxKernel(Kernel):
@@ -120,7 +125,7 @@ class BoxKernel(Kernel):
         self._amplitude = 5.0
         self._compute_kernel()
     
-    def get_separated_kernel_parts(self, dimension_index):
+    def get_separated_kernel_part(self, dimension_index):
         return self._kernel
         
     def get_amplitude(self):
@@ -154,14 +159,42 @@ class GaussKernel(Kernel):
     def get_mode(self, mode_index):
         return self._modes[mode_index]
 
+    def get_separated_kernel_part(self, dimension_index):
+        if not (dimension_index >= 0 and dimension_index < self._dimensionality):
+            print("Error. Kernel only has", self._dimensionality, "dimensions. You wanted dimension ", dimension_index, ".")
+#        print("number of kernel parts: ", len(self._separated_kernel_parts))
+
+        return self._separated_kernel_parts[dimension_index]
+ 
+    def compute_dimension_size(self, dimension_index):
+        if not (dimension_index >= 0 and dimension_index < self._dimensionality):
+            print("Error. Kernel only supports ", self._dimensionality, " dimensions.")
+        
+        max_width = 0
+        for mode in self._modes:
+            mode_width = mode.get_width(dimension_index)
+            amplitude = mode.get_amplitude()
+
+            width = 1
+            if (mode_width < 10000 and mode_width > 0):
+                width =  round(math.sqrt(2.0 * math.pow(mode_width, 2.0) * math.log(math.fabs(amplitude) / self._limit))) + 1
+            else:
+                print("Error. Selected mode with is not in the proper bounds (0 < width < 10000).")
+
+            max_width = int(max(width, max_width))
+
+        return max_width
+
     def calculate(self):
         del self._dimension_sizes[:]
         del self._separated_kernel_parts[:]
 
+#        print("calculating kernel")
         for dimension_index in range(self._dimensionality):
             dimension_size = self.compute_dimension_size(dimension_index)
             self._dimension_sizes.append(dimension_size)
             self._separated_kernel_parts.append(numpy.zeros(shape=dimension_size))
+#        print("  number of kernel parts: ", len(self._separated_kernel_parts))
 
         for mode in self._modes:
             mode.calculate_separated_kernel_parts()
@@ -171,9 +204,9 @@ class GaussKernel(Kernel):
 
     # HACKED
     def recompute_with_parameters(self, amplitude=None, width=None, shift=None):
-        amplitude = 0.
-        widths = []
-        shifts = []
+        widths = None
+        shifts = None
+#        print("recomputing kernel")
 
         if (amplitude is None):
             amplitude = self._modes[0].get_amplitude()
@@ -185,44 +218,16 @@ class GaussKernel(Kernel):
             shifts = self._modes[0].get_shifts()
         else:
             shifts = [shift] * self._dimensionality
+#        print("  0number of kernel parts: ", len(self._separated_kernel_parts))
 
-        self._modes = []
+#        print("  1number of kernel parts: ", len(self._separated_kernel_parts))
+        del self._modes[:]
+#        print("  2number of kernel parts: ", len(self._separated_kernel_parts))
+
         self.add_mode(amplitude, widths, shifts)
-        self.calculate
+#        print("  3number of kernel parts: ", len(self._separated_kernel_parts))
+        self.calculate()
+#        print("  4number of kernel parts: ", len(self._separated_kernel_parts))
 
-#                kernel_mode_buffer = kernel_mode_buffer * 
-                
-#                kernel = mode.get_separated_kernel_part(
-
-
-#    // assemble the kernel
-#    mKernel = cv::Mat::zeros(mKernelParts.at(0).at(0).rows, mKernelParts.at(1).at(0).rows, CV_32FC1);
-#    for (unsigned int mode = 0; mode < _mNumModes; mode++)
-#    {
-#      mKernelBuff.at(mode) = cv::Mat(mKernelParts.at(0).at(mode).rows, mKernelParts.at(1).at(mode).rows, CV_32FC1);
-#      mKernelBuff.at(mode) = mKernelParts.at(0).at(mode) * mKernelParts.at(1).at(mode).t();
-#      mKernel += mKernelBuff.at(mode);
-#      // prepare transposed of second dim.
-#      mKernelPartsTransposed.at(mode) = mKernelParts.at(1).at(mode).t();
-#    }
-        
-    def compute_dimension_size(self, dimension_index):
-        if not (dimension_index >= 0 and dimension_index < self._dimensionality):
-            print("Error. Kernel only supports ", self._dimensionality, " dimensions.")
-        
-        max_width = 0
-        for mode in self._modes:
-            width = mode.get_width(dimension_index)
-            amplitude = mode.get_amplitude()
-
-            width = 1
-            if (width < 10000 and width > 0):
-                width = round(math.sqrt(2.0 * math.pow(width, 2.0) * math.log(math.fabs(amplitude) / self._limit))) + 1
-
-            max_width = int(max(width, max_width))
-
-        return max_width
-
-    def get_separated_kernel_parts(self, dimension_index):
-        return self._separated_kernel_parts[dimension_index]
+       
 
