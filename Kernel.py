@@ -4,9 +4,6 @@ from scipy import ndimage
 import numpy
 import copy
 
-def sigmoid(x, beta, x0):
-    return 1./ (1. + math.exp(-beta * (x - x0)))
-
 def convolve(input, kernel):
     convolution_result = copy.copy(input)
     for dimension_index in range(kernel.get_dimensionality()):
@@ -71,7 +68,6 @@ class KernelMode:
         for dimension_index in range(self._kernel.get_dimensionality()):
             kernel_width = self._kernel.get_dimension_size(dimension_index)
 
-#            center_index = math.floor(kernel_width / 2.0) + round(self._shifts[dimension_index])
             center = (kernel_width / 2.0) + self._shifts[dimension_index]
 
             kernel_part = numpy.zeros(shape=kernel_width)
@@ -81,13 +77,14 @@ class KernelMode:
                                          (2.0 * math.pow(self._widths[dimension_index], 2.0)))
 
             # normalize kernel part
-            kernel_part *= (1. / kernel_part.sum())
+            amplitude_sign = math.copysign(1.0, self._amplitude)
+            kernel_part *= (amplitude_sign / kernel_part.sum())
 
             # multiply the first kernel part with the amplitude.
             # when convolving with all separated kernel parts, this will lead
             # to the correct amplitude value for the "whole kernel"
             if (dimension_index == 0):
-                kernel_part *= self._amplitude
+                kernel_part *= math.fabs(self._amplitude)
 
             self._separated_kernel_parts.append(kernel_part)
 
