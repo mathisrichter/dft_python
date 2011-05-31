@@ -18,6 +18,7 @@ import numpy
 import math
 import math_tools
 import CameraField
+import HeadSensorField
 import HeadControl
 
 from enthought.etsconfig.etsconfig import ETSConfig
@@ -32,7 +33,7 @@ from enthought.traits.ui.api import Item, Group, View, Handler
 from enthought.pyface.timer.api import Timer
 
 # Chaco imports
-from enthought.chaco.api import Plot, ArrayPlotData, HPlotContainer
+from enthought.chaco.api import Plot, ArrayPlotData, HPlotContainer, VPlotContainer
 
 
 
@@ -52,6 +53,8 @@ class TimerController(HasTraits):
         return self._container
 
     def create_plot_component(self):
+        color_range_max_value = 10
+
         self._camera_field_plotdata = ArrayPlotData()
         self._camera_field_plotdata.set_data('imagedata', self.arch._camera_field.get_activation().max(2).transpose())
         self._camera_field_plot = Plot(self._camera_field_plotdata)
@@ -63,8 +66,8 @@ class TimerController(HasTraits):
                                   colormap=jet,
                                   )
         range_self = self._camera_field_plot.plots['camera_field'][0].value_mapper.range
-        range_self.high = 10
-        range_self.low = -10
+        range_self.high = color_range_max_value
+        range_self.low = -color_range_max_value
 
         self._color_space_field_plotdata = ArrayPlotData()
         self._color_space_field_plotdata.set_data('imagedata', self.arch._color_space_field.get_activation().max(2).transpose())
@@ -77,8 +80,8 @@ class TimerController(HasTraits):
                                   colormap=jet,
                                   )
         range_self = self._color_space_field_plot.plots['color_space_field'][0].value_mapper.range
-        range_self.high = 10
-        range_self.low = -10
+        range_self.high = color_range_max_value
+        range_self.low = -color_range_max_value
 
         self._spatial_target_field_plotdata = ArrayPlotData()
         self._spatial_target_field_plotdata.set_data('imagedata', self.arch._spatial_target_field.get_activation().transpose())
@@ -91,8 +94,8 @@ class TimerController(HasTraits):
                                   colormap=jet,
                                   )
         range_self = self._spatial_target_field_plot.plots['spatial_target_field'][0].value_mapper.range
-        range_self.high = 10
-        range_self.low = -10
+        range_self.high = color_range_max_value
+        range_self.low = -color_range_max_value
 
         self._move_head_intention_field_plotdata = ArrayPlotData()
         self._move_head_intention_field_plotdata.set_data('imagedata', self.arch._move_head.get_intention_field().get_activation().transpose())
@@ -105,34 +108,86 @@ class TimerController(HasTraits):
                                   colormap=jet,
                                   )
         range_self = self._move_head_intention_field_plot.plots['move_head_intention_field'][0].value_mapper.range
-        range_self.high = 10
-        range_self.low = -10
+        range_self.high = color_range_max_value
+        range_self.low = -color_range_max_value
 
+        self._move_head_cos_field_plotdata = ArrayPlotData()
+        self._move_head_cos_field_plotdata.set_data('imagedata', self.arch._move_head.get_cos_field().get_activation().transpose())
+        self._move_head_cos_field_plot = Plot(self._move_head_cos_field_plotdata)
+        self._move_head_cos_field_plot.title = 'move head cos'
+        self._move_head_cos_field_plot.img_plot('imagedata',
+                                  name='move_head_cos_field',
+                                  xbounds=(0, self.arch._move_head_field_sizes[0]-1),
+                                  ybounds=(0, self.arch._move_head_field_sizes[1]-1),
+                                  colormap=jet,
+                                  )
+        range_self = self._move_head_cos_field_plot.plots['move_head_cos_field'][0].value_mapper.range
+        range_self.high = color_range_max_value
+        range_self.low = -color_range_max_value
 
-        # Create the colorbar, handing in the appropriate range and colormap
-#        colorbar = ColorBar(index_mapper=LinearMapper(range=range_self),
-#            color_mapper=jet, orientation='v', resizable='v', width=30, padding=20)
+        self._move_arm_intention_field_plotdata = ArrayPlotData()
+        self._move_arm_intention_field_plotdata.set_data('imagedata', self.arch._move_arm.get_intention_field().get_activation().transpose())
+        self._move_arm_intention_field_plot = Plot(self._move_arm_intention_field_plotdata)
+        self._move_arm_intention_field_plot.title = 'move arm int'
+        self._move_arm_intention_field_plot.img_plot('imagedata',
+                                  name='move_arm_intention_field',
+                                  xbounds=(0, self.arch._move_arm_field_sizes[0]-1),
+                                  ybounds=(0, self.arch._move_arm_field_sizes[1]-1),
+                                  colormap=jet,
+                                  )
+        range_self = self._move_arm_intention_field_plot.plots['move_arm_intention_field'][0].value_mapper.range
+        range_self.high = color_range_max_value
+        range_self.low = -color_range_max_value
 
-        self._container = HPlotContainer()
-#        self._container.add(colorbar)
-        self._container.add(self._camera_field_plot)
-        self._container.add(self._color_space_field_plot)
-        self._container.add(self._spatial_target_field_plot)
-        self._container.add(self._move_head_intention_field_plot)
+        self._move_arm_cos_field_plotdata = ArrayPlotData()
+        self._move_arm_cos_field_plotdata.set_data('imagedata', self.arch._move_arm.get_cos_field().get_activation().transpose())
+        self._move_arm_cos_field_plot = Plot(self._move_arm_cos_field_plotdata)
+        self._move_arm_cos_field_plot.title = 'move arm cos'
+        self._move_arm_cos_field_plot.img_plot('imagedata',
+                                  name='move_arm_cos_field',
+                                  xbounds=(0, self.arch._move_arm_field_sizes[0]-1),
+                                  ybounds=(0, self.arch._move_arm_field_sizes[1]-1),
+                                  colormap=jet,
+                                  )
+        range_self = self._move_arm_cos_field_plot.plots['move_arm_cos_field'][0].value_mapper.range
+        range_self.high = color_range_max_value
+        range_self.low = -color_range_max_value
+
+        self._container = VPlotContainer()
+        self._hcontainer_top = HPlotContainer()
+        self._hcontainer_bottom = HPlotContainer()
+        self._hcontainer_bottom.add(self._camera_field_plot)
+        self._hcontainer_bottom.add(self._color_space_field_plot)
+        self._hcontainer_bottom.add(self._spatial_target_field_plot)
+        self._hcontainer_bottom.add(self._move_head_intention_field_plot)
+
+        self._hcontainer_top.add(self._move_arm_intention_field_plot)
+        self._hcontainer_top.add(self._move_arm_cos_field_plot)
+        self._hcontainer_top.add(self._move_head_cos_field_plot)
+
+        self._container.add(self._hcontainer_bottom)
+        self._container.add(self._hcontainer_top)
 
     def onTimer(self, *args):
-#        print("time step: ", str(self._time_steps))
-#        self._time_steps += 1
         self.arch.step()
 
         self._camera_field_plotdata.set_data('imagedata', self.arch._camera_field.get_activation().max(2).transpose())
         self._color_space_field_plotdata.set_data('imagedata', self.arch._color_space_field.get_activation().max(2).transpose())
         self._spatial_target_field_plotdata.set_data('imagedata', self.arch._spatial_target_field.get_activation().transpose())
         self._move_head_intention_field_plotdata.set_data('imagedata', self.arch._move_head.get_intention_field().get_activation().transpose())
+        self._move_head_cos_field_plotdata.set_data('imagedata', self.arch._move_head.get_cos_field().get_activation().transpose())
+        self._move_arm_intention_field_plotdata.set_data('imagedata', self.arch._move_arm.get_intention_field().get_activation().transpose())
+        self._move_arm_cos_field_plotdata.set_data('imagedata', self.arch._move_arm.get_cos_field().get_activation().transpose())
+
+
         self._camera_field_plot.request_redraw()
         self._color_space_field_plot.request_redraw()
         self._spatial_target_field_plot.request_redraw()
         self._move_head_intention_field_plot.request_redraw()
+        self._move_head_cos_field_plot.request_redraw()
+        self._move_arm_intention_field_plot.request_redraw()
+        self._move_arm_cos_field_plot.request_redraw()
+
         return
 
 

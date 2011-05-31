@@ -7,6 +7,7 @@ import DynamicField
 import Kernel
 import math_tools
 import CameraField
+import HeadSensorField
 import HeadControl
 
 
@@ -34,11 +35,13 @@ class GraspArchitecture():
         self.fields.append(self._find_color.get_cos_field())
 
 
+
+
         # create elementary behavior: move head
         move_head_field_dimensionality = 2
         self._move_head_field_sizes = [40, 30]
 
-        # gripper intention field and its kernel
+        # move head intention field and its kernel
         intention_field_kernel = Kernel.GaussKernel(move_head_field_dimensionality)
         intention_field_kernel.add_mode(10.0, [3.0] * move_head_field_dimensionality, [0.0] * move_head_field_dimensionality)
         intention_field_kernel.calculate()
@@ -66,6 +69,69 @@ class GraspArchitecture():
                                              int_node_to_int_field_weight=move_head_int_weight,
                                              name="move head",
                                              step_fields=True)
+
+        # connect the move head intention and CoS field
+        move_head_int_field_to_cos_field_weight = DynamicField.Weight(4.0)
+        DynamicField.connect(self._move_head_intention_field, self._move_head_cos_field, [move_head_int_field_to_cos_field_weight])
+
+        # connect move head intention node to its cos field, so that the peak
+        # forms in the center of the cos field (cos for the move-head behavior)
+        int_node_to_cos_field_projection = DynamicField.Projection(0, move_head_field_dimensionality, set([]), [])
+        weight = math_tools.gauss_2d(self._move_head_field_sizes, amplitude=4.0, sigmas=[3.0, 3.0], shifts=[self._move_head_field_sizes[0]/2., self._move_head_field_sizes[1]/2.])
+        int_node_to_cos_field_weight = DynamicField.Weight(weight)
+        DynamicField.connect(self._move_head.get_intention_node(), self._move_head_cos_field, [int_node_to_cos_field_projection, int_node_to_cos_field_weight])
+
+
+
+
+
+        # create elementary behavior: move arm
+        move_arm_field_dimensionality = 2
+        self._move_arm_field_sizes = [40, 40]
+
+        # move arm intention field and its kernel
+        intention_field_kernel = Kernel.GaussKernel(move_arm_field_dimensionality)
+        intention_field_kernel.add_mode(10.0, [3.0] * move_arm_field_dimensionality, [0.0] * move_arm_field_dimensionality)
+        intention_field_kernel.calculate()
+        self._move_arm_intention_field = DynamicField.DynamicField([[self._move_arm_field_sizes[0]],[self._move_arm_field_sizes[1]]], [], intention_field_kernel)
+        self._move_arm_intention_field.set_global_inhibition(160.0)
+        self._move_arm_intention_field.set_relaxation_time(2.0)
+        self._move_arm_intention_field.set_name("move_arm_intention_field")
+        self.fields.append(self._move_arm_intention_field)
+
+        # move_arm CoS field and its kernel
+        cos_field_kernel = Kernel.GaussKernel(move_arm_field_dimensionality)
+        cos_field_kernel.add_mode(10.0, [3.0] * move_arm_field_dimensionality, [0.0] * move_arm_field_dimensionality)
+        cos_field_kernel.calculate()
+        self._move_arm_cos_field = DynamicField.DynamicField([[self._move_arm_field_sizes[0]],[self._move_arm_field_sizes[1]]], [], cos_field_kernel)
+        self._move_arm_cos_field.set_global_inhibition(160.0)
+        self._move_arm_cos_field.set_relaxation_time(2.0)
+        self._move_arm_cos_field.set_name("move_arm_cos_field")
+        self.fields.append(self._move_arm_cos_field)
+
+        # create elementary behavior: move arm
+        move_arm_int_weight = numpy.ones((self._move_arm_field_sizes)) * 4.0
+
+        self._move_arm = ElementaryBehavior(intention_field=self._move_arm_intention_field,
+                                             cos_field=self._move_arm_cos_field,
+                                             int_node_to_int_field_weight=move_arm_int_weight,
+                                             name="move arm",
+                                             step_fields=True)
+
+        # connect the move arm intention and CoS field
+        move_arm_int_field_to_cos_field_weight = DynamicField.Weight(4.0)
+        DynamicField.connect(self._move_arm_intention_field, self._move_arm_cos_field, [move_arm_int_field_to_cos_field_weight])
+
+        # connect move arm intention node to its cos field, so that the peak
+        # forms in the center of the cos field (cos for the move-arm behavior)
+        int_node_to_cos_field_projection = DynamicField.Projection(0, move_arm_field_dimensionality, set([]), [])
+        weight = math_tools.gauss_2d(self._move_arm_field_sizes, amplitude=4.0, sigmas=[3.0, 3.0], shifts=[self._move_arm_field_sizes[0]/2., self._move_arm_field_sizes[1]/2.])
+        int_node_to_cos_field_weight = DynamicField.Weight(weight)
+        DynamicField.connect(self._move_arm.get_intention_node(), self._move_arm_cos_field, [int_node_to_cos_field_projection, int_node_to_cos_field_weight])
+
+
+
+
 
 
         # create gripper intention and cos fields
@@ -113,12 +179,14 @@ class GraspArchitecture():
         # connect all elementary behaviors to the task node
         connect_to_task(self._task_node, self._find_color)
         connect_to_task(self._task_node, self._move_head)
+        connect_to_task(self._task_node, self._move_arm)
         connect_to_task(self._task_node, self._gripper_open)
         connect_to_task(self._task_node, self._gripper_close)
 
         # create precondition nodes
-        self._gripper_open_precondition_node = precondition(self._gripper_open, self._move_head, self._task_node)
+#        self._gripper_open_precondition_node = precondition(self._gripper_open, self._move_head, self._task_node)
         self._gripper_close_precondition_node = precondition(self._move_head, self._gripper_close, self._task_node)
+        self._move_arm_precondition_node = precondition(self._move_head, self._move_arm, self._task_node)
 
         # create perception color-space field
         color_space_field_dimensionality = 3
@@ -168,7 +236,7 @@ class GraspArchitecture():
         color_space_to_spatial_target_weight = DynamicField.Weight(9.0)
         DynamicField.connect(self._color_space_field, self._spatial_target_field, [color_space_to_spatial_target_projection, color_space_to_spatial_target_weight])
 
-        spatial_target_to_move_head_int_weight = DynamicField.Weight(8.0)
+        spatial_target_to_move_head_int_weight = DynamicField.Weight(4.0)
         DynamicField.connect(self._spatial_target_field, self._move_head.get_intention_field(), [spatial_target_to_move_head_int_weight])
 
         # create perception field in end effector space
@@ -191,6 +259,18 @@ class GraspArchitecture():
         self._head_control = HeadControl.HeadControl(self._move_head_field_sizes, head_speed_fraction = 0.4)
         DynamicField.connect(self._move_head.get_intention_field(), self._head_control)
 
+        # create head sensor field
+        self._head_sensor_field = HeadSensorField.NaoHeadSensorField()
+        self._head_sensor_field.set_name("head_sensor_field")
+        self.fields.append(self._head_sensor_field)
+        self._head_sensor_field_sizes = self._head_sensor_field.get_output_dimension_sizes()
+
+        head_sensor_to_move_arm_int_weight = DynamicField.Weight(4.0)
+        DynamicField.connect(self._head_sensor_field, self._move_arm_intention_field, [head_sensor_to_move_arm_int_weight])
+
+
+
+
     def step(self):
         self._task_node.step()
         self._camera_field.step()
@@ -202,10 +282,13 @@ class GraspArchitecture():
         self._gripper_cos_field.step()
         self._gripper_open.step()
         self._gripper_close.step()
-        self._gripper_open_precondition_node.step()
+#        self._gripper_open_precondition_node.step()
         self._move_head.step()
         self._head_control.step()
         self._gripper_close_precondition_node.step()
+        self._move_arm.step()
+        self._move_arm_precondition_node.step()
+        self._head_sensor_field.step()
 
 
 

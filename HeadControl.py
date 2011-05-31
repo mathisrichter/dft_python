@@ -24,7 +24,6 @@ class HeadControl(DynamicField.Connectable):
 
     def __del__(self):
         self._motion_proxy.setStiffnesses("Head", 0.0)
-        self._motion_proxy.setStiffnesses("RArm", 0.0)
 
     def _step_computation(self):
         # extract x and y position of peak (in retinal coordinates)
