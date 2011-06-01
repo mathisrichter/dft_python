@@ -226,7 +226,7 @@ class Connectable:
 class DynamicField(Connectable):
     "Dynamic field"
 
-    def __init__(self, dimension_bounds=[], dimension_resolutions=[], interaction_kernel=None):
+    def __init__(self, dimension_bounds=[], dimension_resolutions=[], interaction_kernels=None):
         "Constructor"
         Connectable.__init__(self)
 
@@ -278,7 +278,7 @@ class DynamicField(Connectable):
         # amount of self excitation of the system
         self._lateral_interaction = numpy.zeros(shape=self._output_dimension_sizes)
         # convolution kernel used to generate lateral interaction
-        self._lateral_interaction_kernel = interaction_kernel
+        self._lateral_interaction_kernels = interaction_kernels
 
         # noise strength of the system
         self._noise_strength = 0.00
@@ -338,14 +338,14 @@ class DynamicField(Connectable):
     def get_lateral_interaction(self):
         return self._lateral_interaction
 
-    def set_lateral_interaction(self, lateral_interaction):
-        self._lateral_interaction = lateral_interaction
+    def get_lateral_interaction_kernel(self, index):
+        return self._lateral_interaction_kernels[index]
 
-    def get_lateral_interaction_kernel(self):
-        return self._lateral_interaction_kernel
+    def set_lateral_interaction_kernel(self, kernel, index):
+        self._lateral_interaction_kernels[index] = kernel
 
-    def set_lateral_interaction_kernel(self, lateral_interaction_kernel):
-        self._lateral_interaction_kernel = lateral_interaction_kernel
+    def add_lateral_interaction_kernel(self, kernel):
+        self._lateral_interaction_kernels.append(kernel)
 
     def get_noise_strength(self):
         return self._noise_strength
@@ -447,14 +447,10 @@ class DynamicField(Connectable):
             relaxation_time_factor = 1.
 
         # compute the lateral interaction
-        if self._lateral_interaction_kernel is not None:
-            self._lateral_interaction = Kernel.convolve(current_output, self._lateral_interaction_kernel)
-
-#            if (isinstance(self._lateral_interaction_kernel, Kernel.GaussKernel)):
-#                print("field name: ", self._name)
-#                for i in range(self._lateral_interaction_kernel.get_dimensionality()):
-#                    print("kernel ", str(i), " :", str(self._lateral_interaction_kernel.get_separated_kernel_part(i)))
-
+        lateral_interaction = 0.
+        if self._lateral_interaction_kernels is not None:
+            for kernel in self._lateral_interaction_kernels:
+                lateral_interaction += Kernel.convolve(current_output, kernel)
 
         # sum up the input coming in from all connected fields
         field_interaction = 0
@@ -471,7 +467,7 @@ class DynamicField(Connectable):
                      + self._resting_level
                      + self._boost
                      - global_inhibition
-                     + self._lateral_interaction
+                     + lateral_interaction
                      + field_interaction
                      + noise)
 

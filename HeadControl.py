@@ -8,7 +8,7 @@ import math
 class HeadControl(DynamicField.Connectable):
     "Head control"
 
-    def __init__(self, input_dimension_sizes, head_speed_fraction = 0.2, head_time_scale = 0.01, use_robot_sensors = False):
+    def __init__(self, input_dimension_sizes, head_speed_fraction = 0.2, head_time_scale = 0.005, use_robot_sensors = False):
         "Constructor"
         DynamicField.Connectable.__init__(self)
         self._head_speed_fraction = head_speed_fraction

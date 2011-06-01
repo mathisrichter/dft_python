@@ -313,7 +313,7 @@ class FieldControlWidget(QtGui.QWidget):
         self.label_kernel_amplitude.setObjectName("label_kernel_amplitude")
 
         self.slider_kernel_amplitude = Qwt.QwtSlider(self)
-        self.slider_kernel_amplitude.setRange(0.0, 30.0, 0.1)
+        self.slider_kernel_amplitude.setRange(0.0, 100.0, 0.1)
         self.slider_kernel_amplitude.setOrientation(Qt.Qt.Horizontal)
         self.slider_kernel_amplitude.setBgStyle(Qwt.QwtSlider.BgSlot)
         self.slider_kernel_amplitude.setObjectName("slider_kernel_amplitude")
@@ -495,11 +495,11 @@ class FieldControlWidget(QtGui.QWidget):
         self.slider_resting_level.setValue(resting_level)
         self.value_resting_level.setNum(resting_level)
         
-        kernel_amplitude = self.current_field.get_lateral_interaction_kernel().get_mode(0).get_amplitude()
+        kernel_amplitude = self.current_field.get_lateral_interaction_kernel(0).get_amplitude()
         self.slider_kernel_amplitude.setValue(kernel_amplitude)
         self.value_kernel_amplitude.setNum(kernel_amplitude)
 
-        kernel_width = self.current_field.get_lateral_interaction_kernel().get_mode(0).get_widths()[0]
+        kernel_width = self.current_field.get_lateral_interaction_kernel(0).get_width(0)
         self.slider_kernel_width.setValue(kernel_width)
         self.value_kernel_width.setNum(kernel_width)
         
@@ -544,12 +544,12 @@ class FieldControlWidget(QtGui.QWidget):
 
     def set_field_kernel_amplitude(self, kernel_amplitude):
         if self.current_field is not None:
-            self.current_field.get_lateral_interaction_kernel().recompute_with_parameters(amplitude=kernel_amplitude)
+            self.current_field.get_lateral_interaction_kernel(0).set_amplitude(kernel_amplitude)
             self.value_kernel_amplitude.setNum(kernel_amplitude)
 
     def set_field_kernel_width(self, kernel_width):
         if self.current_field is not None:
-            self.current_field.get_lateral_interaction_kernel().recompute_with_parameters(width=kernel_width)
+            self.current_field.get_lateral_interaction_kernel(0).set_width(kernel_width, 0)
             self.value_kernel_width.setNum(kernel_width)
 
     def set_field_noise(self, noise):

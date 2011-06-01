@@ -18,33 +18,40 @@ class NaoHeadSensorField(DynamicField.DynamicField):
     def __del__(self):
         self._gvm_name = self._motion_proxy.unsubscribe(self._gvm_name)
 
+    def _tilt_to_y(self, tilt, camera_height):
+        return camera_height / math.tan(tilt)
+
+    def _pan_to_x(self, pan, y):
+        return y * math.tan(pan)
+
     def _step_computation(self):
         # get the current pan and tilt angles of the head
         current_head_pan = self._motion_proxy.getAngles("HeadYaw", self._use_robot_sensors)[0]
-        current_head_tilt = self._motion_proxy.getAngles("HeadPitch", self._use_robot_sensors)[0]
-
-        print("pan: ", current_head_pan)
-        print("tilt: ", current_head_tilt)
+        current_head_tilt = math.fabs(self._motion_proxy.getAngles("HeadPitch", self._use_robot_sensors)[0])
 
         # get the current height of the camera in torso space
         current_camera_height = self._motion_proxy.getPosition("CameraTop", 0, self._use_robot_sensors)[2]
 
-        print("cam height: ", current_camera_height)
-
         # compute the x,y coordinates of where the end effector should go (in
         # torso space)
-        end_effector_target_x = current_camera_height * math.tan(current_head_tilt)
-        end_effector_target_y = current_camera_height * math.tan(current_head_pan)
+        min_tilt_angle = 0.5149 # 29.5 degrees
+        max_tilt_angle = 0.1745 # 10 degrees
+        min_y = self._tilt_to_y(min_tilt_angle, current_camera_height)
+        max_y = self._tilt_to_y(max_tilt_angle, current_camera_height)
+        current_y = self._tilt_to_y(current_head_tilt, current_camera_height)
 
-        print("target x: ", end_effector_target_x)
-        print("target y: ", end_effector_target_y)
+        min_pan_angle = math.pi / 4.0
+        max_pan_angle = -math.pi / 4.0
+        min_x = self._pan_to_x(min_pan_angle, current_y)
+        max_x = self._pan_to_x(max_pan_angle, current_y)
+        current_x = self._pan_to_x(current_head_pan, current_y)
+
+        length_y = max_y - min_y
+        length_x = max_x - min_x
 
         # convert the target coordinates into field coordinates
-        end_effector_target_x = end_effector_target_x * self._output_dimension_sizes[0] + (self._output_dimension_sizes[0] / 2.0)
-        end_effector_target_y = end_effector_target_y * self._output_dimension_sizes[1] + (self._output_dimension_sizes[1] / 2.0)
-
-        print("targetf x: ", end_effector_target_x)
-        print("targetf y: ", end_effector_target_y)
+        end_effector_target_y = ((current_y - min_y) / length_y) * self._output_dimension_sizes[1]
+        end_effector_target_x = ((current_x - min_x) / length_x) * self._output_dimension_sizes[0]
 
         # create a Gaussian activation pattern at the target location
         activation = math_tools.gauss_2d(self._output_dimension_sizes, 9.0, [0.5, 0.5], [end_effector_target_x, end_effector_target_y])
