@@ -92,12 +92,12 @@ class GaussKernel(Kernel):
     def set_width(self, width, dimension_index):
         self._check_dimension_index(dimension_index)
         self._widths[dimension_index] = width
-        self._calculate_seperated_kernel_parts()
+        self._calculate_separated_kernel_parts()
 
     def set_shift(self, shift, dimension_index):
         self._check_dimension_index(dimension_index)
         self._shifts = shifts
-        self._calculate_seperated_kernel_parts()
+        self._calculate_separated_kernel_parts()
 
     def _calculate_dimension_size(self, dimension_index):
         if not (dimension_index >= 0 and dimension_index < self._dimensionality):

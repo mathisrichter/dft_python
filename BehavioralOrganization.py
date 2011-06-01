@@ -8,6 +8,7 @@ import math_tools
 import CameraField
 import HeadSensorField
 import HeadControl
+import EndEffectorControl
 
 
 class GraspArchitecture():
@@ -239,7 +240,7 @@ class GraspArchitecture():
         DynamicField.connect(self._move_head.get_intention_field(), self._head_control)
 
         # create head sensor field
-        self._head_sensor_field = HeadSensorField.NaoHeadSensorField()
+        self._head_sensor_field = HeadSensorField.NaoHeadSensorField(use_robot_sensors = True)
         self._head_sensor_field.set_name("head_sensor_field")
         self.fields.append(self._head_sensor_field)
         self._head_sensor_field_sizes = self._head_sensor_field.get_output_dimension_sizes()
@@ -247,7 +248,9 @@ class GraspArchitecture():
         head_sensor_to_move_arm_int_weight = DynamicField.Weight(4.0)
         DynamicField.connect(self._head_sensor_field, self._move_arm_intention_field, [head_sensor_to_move_arm_int_weight])
 
-
+        # create end effector control connectable
+        self._end_effector_control = EndEffectorControl.NaoEndEffectorControl(self._head_sensor_field, self._move_arm_field_sizes, end_effector_speed_fraction = 0.3, use_robot_sensors = True)
+        DynamicField.connect(self._move_arm.get_intention_field(), self._end_effector_control)
 
 
     def step(self):
@@ -268,6 +271,7 @@ class GraspArchitecture():
         self._move_arm.step()
         self._move_arm_precondition_node.step()
         self._head_sensor_field.step()
+        self._end_effector_control.step()
 
 
 
