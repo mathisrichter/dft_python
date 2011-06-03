@@ -249,7 +249,7 @@ class GraspArchitecture():
         DynamicField.connect(self._head_sensor_field, self._move_arm_intention_field, [head_sensor_to_move_arm_int_weight])
 
         # create end effector control connectable
-        self._end_effector_control = EndEffectorControl.NaoEndEffectorControl(self._head_sensor_field, self._move_arm_field_sizes, end_effector_speed_fraction = 0.3, use_robot_sensors = True)
+        self._end_effector_control = EndEffectorControl.NaoEndEffectorControl(self._head_sensor_field, self._move_arm_field_sizes, end_effector_speed_fraction = 0.1, use_robot_sensors = True)
         DynamicField.connect(self._move_arm.get_intention_field(), self._end_effector_control)
 
 

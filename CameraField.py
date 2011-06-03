@@ -16,6 +16,8 @@ class NaoCameraField(DynamicField.DynamicField):
         self._gvm_name = self._vision_proxy.subscribe(self._gvm_name, 0, 12, 30)
         # switch off auto white balance
         self._vision_proxy.setParam(12, 0)
+        # select the bottom camera
+        self._vision_proxy.setParam(18, 1)
 
         self._name = "nao_camera_field"
 

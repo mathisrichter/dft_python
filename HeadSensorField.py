@@ -7,10 +7,13 @@ import math_tools
 class NaoHeadSensorField(DynamicField.DynamicField):
     "Nao head sensor"
 
-    def __init__(self, use_robot_sensors=False):
+    def __init__(self, camera_id = "CameraBottom", use_robot_sensors=False):
         "Constructor"
         DynamicField.DynamicField.__init__(self, dimension_bounds = [[40],[40]])
 
+        # 2: nao space (origin in feet, x is front, y is left, z is up)
+        self._robot_space_id = 2
+        self._camera_id = camera_id
         self._motion_proxy = ALProxy("ALMotion", "192.168.0.102", 9559)
         self._name = "nao_head_sensor"
         self._use_robot_sensors = use_robot_sensors
@@ -19,6 +22,8 @@ class NaoHeadSensorField(DynamicField.DynamicField):
         self._min_y = 0.0
         self._max_y = 0.0
 
+        # get the orientation of the top (0 deg) or bottom camera (40 deg)
+
     def __del__(self):
         self._gvm_name = self._motion_proxy.unsubscribe(self._gvm_name)
 
@@ -26,7 +31,7 @@ class NaoHeadSensorField(DynamicField.DynamicField):
         return camera_height / math.tan(tilt)
 
     def _pan_to_x(self, pan, y):
-        return y * math.tan(pan)
+        return y * math.sin(pan)
 
     def get_min_x(self):
         return self._min_x
@@ -41,18 +46,19 @@ class NaoHeadSensorField(DynamicField.DynamicField):
         return self._max_y
 
     def _step_computation(self):
-        # get the current pan and tilt angles of the head
-        current_head_pan = self._motion_proxy.getAngles("HeadYaw", self._use_robot_sensors)[0]
-        current_head_tilt = math.fabs(self._motion_proxy.getAngles("HeadPitch", self._use_robot_sensors)[0])
+        # get the current pan and tilt angles of the camera
+        camera_pos = self._motion_proxy.getPosition(self._camera_id, self._robot_space_id, self._use_robot_sensors)
+        current_head_pan = camera_pos[5]
+        current_head_tilt = camera_pos[4]
 
-        # get the current height of the camera in torso space
-        current_camera_height = self._motion_proxy.getPosition("CameraTop", 2, self._use_robot_sensors)[2]
-        # subtract the height of the plane of objects
-        current_camera_height -= 0.25
+        # get the current height of the objects in torso space
+        # the objects are at a height of 0.35 m
+        current_camera_height = camera_pos[2] - 0.35
 
         # compute the x,y coordinates of where the end effector should go (in
         # torso space)
-        min_tilt_angle = 0.5149 # 29.5 degrees
+#        min_tilt_angle = 0.5149 # 29.5 degrees
+        min_tilt_angle = 1.2130 # 29.5 + 40.0 degrees
         max_tilt_angle = 0.1745 # 10 degrees
         self._min_y = self._tilt_to_y(min_tilt_angle, current_camera_height)
         self._max_y = self._tilt_to_y(max_tilt_angle, current_camera_height)
