@@ -178,7 +178,7 @@ class GraspArchitecture():
 
         # create perception color-space field
         color_space_field_dimensionality = 3
-        color_space_kernel = Kernel.GaussKernel(50.0, [3.0] * color_space_field_dimensionality)
+        color_space_kernel = Kernel.GaussKernel(10.0, [3.0] * color_space_field_dimensionality)
 
         self._color_space_field_sizes = [self._move_head_field_sizes[0], self._move_head_field_sizes[1], self._find_color_field_size]
         self._color_space_field = DynamicField.DynamicField([[self._color_space_field_sizes[0]],[self._color_space_field_sizes[1]],[self._color_space_field_sizes[2]]], [], [color_space_kernel])

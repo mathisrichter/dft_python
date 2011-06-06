@@ -60,8 +60,8 @@ class NaoEndEffectorControl(DynamicField.Connectable):
         # the x and y coordinates are switched in the field, in relation to the
         # robot coordinate system
         int_field_output = self.get_incoming_connectables()[0].get_output()
-        int_field_output_y = int_field_output.max(1)
         int_field_output_x = int_field_output.max(0)
+        int_field_output_y = int_field_output.max(1)
         print("int field output: ", str(int_field_output))
 
         # set the normalization factor of the end effector nodes
@@ -72,10 +72,10 @@ class NaoEndEffectorControl(DynamicField.Connectable):
         field_length_x = len(int_field_output_x)
         field_length_y = len(int_field_output_y)
 
-        min_y = self._head_sensor_field.get_min_x()
-        max_y = self._head_sensor_field.get_max_x()
-        min_x = self._head_sensor_field.get_min_y()
-        max_x = self._head_sensor_field.get_max_y()
+        min_x = self._head_sensor_field.get_min_x()
+        max_x = self._head_sensor_field.get_max_x()
+        min_y = self._head_sensor_field.get_min_y()
+        max_y = self._head_sensor_field.get_max_y()
 
         ramp_x = numpy.linspace(min_x, max_x , field_length_x)
         ramp_y = numpy.linspace(min_y, max_y, field_length_y)
@@ -104,6 +104,9 @@ class NaoEndEffectorControl(DynamicField.Connectable):
 #            print("x dot is none")
 #        if (y_dot is None):
 #            print("y dot is none")
+        print("current ee x: ", str(current_x))
+        print("current ee y: ", str(current_y))
+        print("current ee z: ", str(current_z))
 
         print("x dot: ", str(x_dot))
         print("y dot: ", str(y_dot))
