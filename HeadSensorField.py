@@ -74,15 +74,15 @@ class NaoHeadSensorField(DynamicField.DynamicField):
         length_x = self._max_x - self._min_x
         length_y = self._max_y - self._min_y
 
-        print("current x from cam: ", current_x)
-        print("current y from cam: ", current_y)
+#        print("current x from cam: ", current_x)
+#        print("current y from cam: ", current_y)
 
         # convert the target coordinates into field coordinates
         end_effector_target_x = ((current_x - self._min_x) / length_x) * self._output_dimension_sizes[0]
         end_effector_target_y = ((current_y - self._min_y) / length_y) * self._output_dimension_sizes[1]
 
         # create a Gaussian activation pattern at the target location
-        activation = math_tools.gauss_2d(self._output_dimension_sizes, 9.0, [0.5, 0.5], [end_effector_target_y, end_effector_target_x])
+        activation = math_tools.gauss_2d(self._output_dimension_sizes, 6.0, [2.0, 2.0], [end_effector_target_y, end_effector_target_x]) - 5.0
         self._activation = activation
 
         # compute the thresholded activation of the field

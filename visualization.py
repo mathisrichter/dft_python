@@ -55,6 +55,19 @@ class TimerController(HasTraits):
     def create_plot_component(self):
         color_range_max_value = 10
 
+
+        x_axis = numpy.array(range(self.arch._gripper_right_cos_field.get_output_dimension_sizes()[0]))
+        self._gripper_right_cos_field_plotdata = ArrayPlotData(x = x_axis, y = self.arch._gripper_right_cos_field.get_activation())
+        self._gripper_right_cos_field_plot = Plot(self._gripper_right_cos_field_plotdata)
+        self._gripper_right_cos_field_plot.title = 'gripper right cos'
+        self._gripper_right_cos_field_plot.plot(("x","y"), type = "line", color = "blue")
+
+        x_axis = numpy.array(range(self.arch._gripper_left_cos_field.get_output_dimension_sizes()[0]))
+        self._gripper_left_cos_field_plotdata = ArrayPlotData(x = x_axis, y = self.arch._gripper_left_cos_field.get_activation())
+        self._gripper_left_cos_field_plot = Plot(self._gripper_left_cos_field_plotdata)
+        self._gripper_left_cos_field_plot.title = 'gripper left cos'
+        self._gripper_left_cos_field_plot.plot(("x","y"), type = "line", color = "blue")
+
         self._camera_field_plotdata = ArrayPlotData()
         self._camera_field_plotdata.set_data('imagedata', self.arch._camera_field.get_activation().max(2).transpose())
         self._camera_field_plot = Plot(self._camera_field_plotdata)
@@ -80,6 +93,20 @@ class TimerController(HasTraits):
                                   colormap=jet,
                                   )
         range_self = self._color_space_field_plot.plots['color_space_field'][0].value_mapper.range
+        range_self.high = color_range_max_value
+        range_self.low = -color_range_max_value
+
+        self._color_space_ee_field_plotdata = ArrayPlotData()
+        self._color_space_ee_field_plotdata.set_data('imagedata', self.arch._color_space_ee_field.get_activation().max(2).transpose())
+        self._color_space_ee_field_plot = Plot(self._color_space_ee_field_plotdata)
+        self._color_space_ee_field_plot.title = 'color space ee'
+        self._color_space_ee_field_plot.img_plot('imagedata',
+                                  name='color_space_ee_field',
+                                  xbounds=(0, self.arch._color_space_ee_field_sizes[0]-1),
+                                  ybounds=(0, self.arch._color_space_ee_field_sizes[1]-1),
+                                  colormap=jet,
+                                  )
+        range_self = self._color_space_ee_field_plot.plots['color_space_ee_field'][0].value_mapper.range
         range_self.high = color_range_max_value
         range_self.low = -color_range_max_value
 
@@ -131,25 +158,25 @@ class TimerController(HasTraits):
         self._move_right_arm_intention_field_plot.title = 'move arm int'
         self._move_right_arm_intention_field_plot.img_plot('imagedata',
                                   name='move_right_arm_intention_field',
-                                  xbounds=(0, self.arch._move_right_arm_field_sizes[0]-1),
-                                  ybounds=(0, self.arch._move_right_arm_field_sizes[1]-1),
+                                  xbounds=(0, self.arch._move_arm_field_sizes[0]-1),
+                                  ybounds=(0, self.arch._move_arm_field_sizes[1]-1),
                                   colormap=jet,
                                   )
         range_self = self._move_right_arm_intention_field_plot.plots['move_right_arm_intention_field'][0].value_mapper.range
         range_self.high = color_range_max_value
         range_self.low = -color_range_max_value
 
-        self._move_right_arm_cos_field_plotdata = ArrayPlotData()
-        self._move_right_arm_cos_field_plotdata.set_data('imagedata', self.arch._move_right_arm.get_cos_field().get_activation().transpose())
-        self._move_right_arm_cos_field_plot = Plot(self._move_right_arm_cos_field_plotdata)
-        self._move_right_arm_cos_field_plot.title = 'move arm cos'
-        self._move_right_arm_cos_field_plot.img_plot('imagedata',
-                                  name='move_right_arm_cos_field',
-                                  xbounds=(0, self.arch._move_right_arm_field_sizes[0]-1),
-                                  ybounds=(0, self.arch._move_right_arm_field_sizes[1]-1),
+        self._move_arm_cos_field_plotdata = ArrayPlotData()
+        self._move_arm_cos_field_plotdata.set_data('imagedata', self.arch._move_right_arm.get_cos_field().get_activation().transpose())
+        self._move_arm_cos_field_plot = Plot(self._move_arm_cos_field_plotdata)
+        self._move_arm_cos_field_plot.title = 'move arm cos'
+        self._move_arm_cos_field_plot.img_plot('imagedata',
+                                  name='move_arm_cos_field',
+                                  xbounds=(0, self.arch._move_arm_field_sizes[0]-1),
+                                  ybounds=(0, self.arch._move_arm_field_sizes[1]-1),
                                   colormap=jet,
                                   )
-        range_self = self._move_right_arm_cos_field_plot.plots['move_right_arm_cos_field'][0].value_mapper.range
+        range_self = self._move_arm_cos_field_plot.plots['move_arm_cos_field'][0].value_mapper.range
         range_self.high = color_range_max_value
         range_self.low = -color_range_max_value
 
@@ -160,10 +187,13 @@ class TimerController(HasTraits):
         self._hcontainer_bottom.add(self._color_space_field_plot)
         self._hcontainer_bottom.add(self._spatial_target_field_plot)
         self._hcontainer_bottom.add(self._move_head_intention_field_plot)
+        self._hcontainer_bottom.add(self._gripper_left_cos_field_plot)
 
+        self._hcontainer_top.add(self._color_space_ee_field_plot)
         self._hcontainer_top.add(self._move_right_arm_intention_field_plot)
-        self._hcontainer_top.add(self._move_right_arm_cos_field_plot)
+        self._hcontainer_top.add(self._move_arm_cos_field_plot)
         self._hcontainer_top.add(self._move_head_cos_field_plot)
+        self._hcontainer_top.add(self._gripper_right_cos_field_plot)
 
         self._container.add(self._hcontainer_bottom)
         self._container.add(self._hcontainer_top)
@@ -173,20 +203,25 @@ class TimerController(HasTraits):
 
         self._camera_field_plotdata.set_data('imagedata', self.arch._camera_field.get_activation().max(2).transpose())
         self._color_space_field_plotdata.set_data('imagedata', self.arch._color_space_field.get_activation().max(2).transpose())
+        self._color_space_ee_field_plotdata.set_data('imagedata', self.arch._color_space_ee_field.get_activation().max(2).transpose())
         self._spatial_target_field_plotdata.set_data('imagedata', self.arch._spatial_target_field.get_activation().transpose())
         self._move_head_intention_field_plotdata.set_data('imagedata', self.arch._move_head.get_intention_field().get_activation().transpose())
         self._move_head_cos_field_plotdata.set_data('imagedata', self.arch._move_head.get_cos_field().get_activation().transpose())
         self._move_right_arm_intention_field_plotdata.set_data('imagedata', self.arch._move_right_arm.get_intention_field().get_activation().transpose())
-        self._move_right_arm_cos_field_plotdata.set_data('imagedata', self.arch._move_right_arm.get_cos_field().get_activation().transpose())
-
+        self._move_arm_cos_field_plotdata.set_data('imagedata', self.arch._move_right_arm.get_cos_field().get_activation().transpose())
+        self._gripper_right_cos_field_plotdata.set_data('y', self.arch._gripper_right_cos_field.get_activation())
+        self._gripper_left_cos_field_plotdata.set_data('y', self.arch._gripper_left_cos_field.get_activation())
 
         self._camera_field_plot.request_redraw()
         self._color_space_field_plot.request_redraw()
+        self._color_space_ee_field_plot.request_redraw()
         self._spatial_target_field_plot.request_redraw()
         self._move_head_intention_field_plot.request_redraw()
         self._move_head_cos_field_plot.request_redraw()
         self._move_right_arm_intention_field_plot.request_redraw()
-        self._move_right_arm_cos_field_plot.request_redraw()
+        self._move_arm_cos_field_plot.request_redraw()
+        self._gripper_right_cos_field_plot.request_redraw()
+        self._gripper_left_cos_field_plot.request_redraw()
 
         return
 

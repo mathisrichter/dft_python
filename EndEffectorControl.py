@@ -17,40 +17,42 @@ class NaoEndEffectorControlRight(DynamicField.Connectable):
         self._input_dimension_sizes = input_dimension_sizes
         self._head_sensor_field = head_sensor_field
 
-        initial_x = 0.05
-        initial_y = -0.10
-        initial_z = 0.35
-
-        # create nodes controlling the end effector
-        self._end_effector_x = DynamicField.DynamicField([], [], None)
-        self._end_effector_x.set_resting_level(0.)
-        self._end_effector_x.set_initial_activation(initial_x)
-        self._end_effector_x.set_noise_strength(0.0)
-        self._end_effector_x.set_relaxation_time(60.)
-
-        self._end_effector_y = DynamicField.DynamicField([], [], None)
-        self._end_effector_y.set_resting_level(0.)
-        self._end_effector_y.set_initial_activation(initial_y)
-        self._end_effector_y.set_noise_strength(0.0)
-        self._end_effector_y.set_relaxation_time(60.)
-
-        self._end_effector_z = DynamicField.DynamicField([], [], None)
-        self._end_effector_z.set_resting_level(0.)
-        self._end_effector_z.set_initial_activation(initial_z)
-        self._end_effector_z.set_noise_strength(0.0)
-        self._end_effector_z.set_relaxation_time(60.)
-        self._end_effector_z.set_boost(0.35)
-
-
         # naoqi proxy to talk to the motion module
         self._motion_proxy = ALProxy("ALMotion", "192.168.0.102", 9559)
         # set the stiffness of the arm to 1.0, so it will move
         self._motion_proxy.setStiffnesses("RArm", 1.0)
-        # move the end effector to an initial position to make grasping
-        # easier
-        # [position x, pos y, pos z, orientation alpha, ori beta, ori gamma]
-#        initial_end_effector_configuration = [initial_x, initial_y, initial_z, 0.0, 0.0, 0.0]
-#        self._motion_proxy.positionInterpolation("RArm", 2, initial_end_effector_configuration, 7, 3, True)
+
+        initial_z = 0.35
+        initial_alpha = math.pi / 2.0
+
+        current_pos = self._motion_proxy.getPosition("RArm", 2, True)
+
+        # create nodes controlling the end effector
+        self._end_effector_x = DynamicField.DynamicField([], [], None)
+        self._end_effector_x.set_resting_level(0.)
+        self._end_effector_x.set_noise_strength(0.0)
+        self._end_effector_x.set_relaxation_time(50.)
+        self._end_effector_x.set_boost(current_pos[0])
+
+        self._end_effector_y = DynamicField.DynamicField([], [], None)
+        self._end_effector_y.set_resting_level(0.)
+        self._end_effector_y.set_noise_strength(0.0)
+        self._end_effector_y.set_relaxation_time(50.)
+        self._end_effector_y.set_boost(current_pos[1])
+
+        self._end_effector_z = DynamicField.DynamicField([], [], None)
+        self._end_effector_z.set_resting_level(0.)
+        self._end_effector_z.set_noise_strength(0.0)
+        self._end_effector_z.set_relaxation_time(50.)
+        self._end_effector_z.set_boost(initial_z)
+
+        self._end_effector_alpha = DynamicField.DynamicField([], [], None)
+        self._end_effector_alpha.set_resting_level(0.)
+        self._end_effector_alpha.set_initial_activation(initial_alpha)
+        self._end_effector_alpha.set_noise_strength(0.0)
+        self._end_effector_alpha.set_relaxation_time(50.)
+        self._end_effector_alpha.set_boost(initial_alpha)
+
 
     def __del__(self):
         self._motion_proxy.setStiffnesses("RArm", 0.0)
@@ -63,6 +65,13 @@ class NaoEndEffectorControlRight(DynamicField.Connectable):
         int_field_output_x = int_field_output.max(0)
         int_field_output_y = int_field_output.max(1)
 #        print("int field output: ", str(int_field_output))
+
+#        height_int_field_output = self.get_incoming_connectables()[1].get_output()
+#        self._end_effector_z.set_normalization_factor(height_int_field_output.sum())
+#        field_length_z = len(height_int_field_output)
+
+#        height_ramp = numpy.linspace(0.0, 
+
 
         # set the normalization factor of the end effector nodes
         self._end_effector_x.set_normalization_factor(int_field_output_x.sum())
@@ -87,44 +96,49 @@ class NaoEndEffectorControlRight(DynamicField.Connectable):
         end_effector_x_boost = numpy.dot(int_field_output_x, ramp_x)
         end_effector_y_boost = numpy.dot(int_field_output_y, ramp_y)
 
-        print("boost x: ", str(end_effector_x_boost))
-        print("boost y: ", str(end_effector_y_boost))
+#        print("boost x: ", str(end_effector_x_boost))
+#        print("boost y: ", str(end_effector_y_boost))
 
-        current_x = self._motion_proxy.getPosition("RArm", 2, True)[0]
-        current_y = self._motion_proxy.getPosition("RArm", 2, True)[1]
-        current_z = self._motion_proxy.getPosition("RArm", 2, True)[2]
+        current_pos = self._motion_proxy.getPosition("RArm", 2, True)
+        current_x = current_pos[0]
+        current_y = current_pos[1]
+        current_z = current_pos[2]
+        current_alpha = current_pos[3]
         self._end_effector_x.set_boost(end_effector_x_boost)
         self._end_effector_y.set_boost(end_effector_y_boost)
 
         x_dot = self._end_effector_x.get_change(current_x)[0]
         y_dot = self._end_effector_y.get_change(current_y)[0]
         z_dot = self._end_effector_z.get_change(current_z)[0]
+        alpha_dot = self._end_effector_alpha.get_change(current_alpha)[0]
 
 #        if (x_dot is None):
 #            print("x dot is none")
 #        if (y_dot is None):
 #            print("y dot is none")
-        print("current ee x: ", str(current_x))
-        print("current ee y: ", str(current_y))
-        print("current ee z: ", str(current_z))
+#        print("current ee x: ", str(current_x))
+#        print("current ee y: ", str(current_y))
+#        print("current ee z: ", str(current_z))
 
-        print("x dot: ", str(x_dot))
-        print("y dot: ", str(y_dot))
-        print("z dot: ", str(z_dot))
+#        print("x dot: ", str(x_dot))
+#        print("y dot: ", str(y_dot))
+#        print("z dot: ", str(z_dot))
 
         # compute the change values for x,y of the end_effector
         end_effector_change = [x_dot,
                                y_dot,
                                z_dot,
-                               0., # orientation alpha
+                               alpha_dot,
                                0., # orientation beta
                                0.] # orientation gamma
+
+        print("ee change: ", end_effector_change)
 
         # move the arm towards the peak
         # (the last parameter is the axis mask and determines, what should be
         # controlled: 7 for position only, 56 for orientation only, and 63
         # for position and orientation
-        self._motion_proxy.changePosition("RArm", 2, end_effector_change, self._end_effector_speed_fraction, 7)
+        self._motion_proxy.changePosition("RArm", 2, end_effector_change, self._end_effector_speed_fraction, 15)
 
 
 class NaoEndEffectorControlLeft(DynamicField.Connectable):
