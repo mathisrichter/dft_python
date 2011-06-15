@@ -8,7 +8,7 @@ import math
 class NaoGripperControlRight(DynamicField.Connectable):
     "Gripper control right"
 
-    def __init__(self, input_dimension_size, gripper_speed_fraction = 0.2, use_robot_sensors = False):
+    def __init__(self, input_dimension_size, gripper_speed_fraction = 0.2, use_robot_sensors = True):
         "Constructor"
         DynamicField.Connectable.__init__(self)
         self._gripper_speed_fraction = gripper_speed_fraction
@@ -68,7 +68,7 @@ class NaoGripperControlRight(DynamicField.Connectable):
 class NaoGripperControlLeft(DynamicField.Connectable):
     "Gripper control left"
 
-    def __init__(self, input_dimension_size, gripper_speed_fraction = 0.2, use_robot_sensors = False):
+    def __init__(self, input_dimension_size, gripper_speed_fraction = 0.2, use_robot_sensors = True):
         "Constructor"
         DynamicField.Connectable.__init__(self)
         self._gripper_speed_fraction = gripper_speed_fraction

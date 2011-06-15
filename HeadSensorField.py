@@ -7,7 +7,7 @@ import math_tools
 class NaoHeadSensorField(DynamicField.DynamicField):
     "Nao head sensor"
 
-    def __init__(self, camera_id = "CameraBottom", use_robot_sensors=False):
+    def __init__(self, camera_id = "CameraBottom", use_robot_sensors=True):
         "Constructor"
         DynamicField.DynamicField.__init__(self, dimension_bounds = [[40],[40]])
 

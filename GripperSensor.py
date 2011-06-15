@@ -7,7 +7,7 @@ import math_tools
 class NaoGripperSensorRight(DynamicField.DynamicField):
     "Nao gripper sensor"
 
-    def __init__(self, gripper_field_size, use_robot_sensors=False):
+    def __init__(self, gripper_field_size, use_robot_sensors=True):
         "Constructor"
         DynamicField.DynamicField.__init__(self, dimension_bounds = [[gripper_field_size]])
 
@@ -31,7 +31,7 @@ class NaoGripperSensorRight(DynamicField.DynamicField):
 class NaoGripperSensorLeft(DynamicField.DynamicField):
     "Nao gripper sensor"
 
-    def __init__(self, gripper_field_size, use_robot_sensors=False):
+    def __init__(self, gripper_field_size, use_robot_sensors=True):
         "Constructor"
         DynamicField.DynamicField.__init__(self, dimension_bounds = [[gripper_field_size]])
 

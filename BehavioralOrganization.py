@@ -47,7 +47,7 @@ class GraspArchitecture():
 
         # create elementary behavior: find color ee marker
         self._find_color_ee_field_size = 15
-        find_color_ee_int_weight = math_tools.gauss_1d(self._find_color_ee_field_size, amplitude=15.0, sigma=0.5, shift=6.0)
+        find_color_ee_int_weight = math_tools.gauss_1d(self._find_color_ee_field_size, amplitude=15.0, sigma=0.5, shift=7.0)
 
         self._find_color_ee = ElementaryBehavior.with_internal_fields(field_dimensionality=1,
                                                     field_sizes=[[self._find_color_ee_field_size]],
@@ -146,6 +146,51 @@ class GraspArchitecture():
         int_node_to_cos_field_projection = DynamicField.Projection(0, move_head_field_dimensionality, set([]), [])
         int_node_to_cos_field_weight = DynamicField.Weight(3.0)
         DynamicField.connect(self._move_right_arm.get_intention_node(), self._move_arm_cos_field, [int_node_to_cos_field_projection, int_node_to_cos_field_weight])
+
+
+        ###############################################################################################################
+        # VISUAL SERVOING RIGHT ARM
+        ###############################################################################################################
+
+        visual_servoing_field_dimensionality = 2
+        self._visual_servoing_field_sizes = self._move_head_field_sizes
+
+        # visual servoing right arm intention field and kernel
+        intention_field_kernel = Kernel.GaussKernel(10.0, [3.0] * visual_servoing_field_dimensionality)
+        self._visual_servoing_right_intention_field = DynamicField.DynamicField([[self._visual_servoing_field_sizes[0]],[self._visual_servoing_field_sizes[1]]], [], [intention_field_kernel])
+        self._visual_servoing_right_intention_field.set_global_inhibition(60.0)
+        self._visual_servoing_right_intention_field.set_relaxation_time(2.0)
+        self._visual_servoing_right_intention_field.set_name("visual_servoing_right_intention_field")
+        self.fields.append(self._visual_servoing_right_intention_field)
+
+        # move arm CoS field and its kernel
+        visual_servoing_cos_field_dimensionality = move_head_field_dimensionality
+        self._visual_servoing_cos_field_sizes = self._move_head_field_sizes
+        cos_field_kernel = Kernel.GaussKernel(15.0, [3.0] * visual_servoing_cos_field_dimensionality)
+        self._visual_servoing_cos_field = DynamicField.DynamicField([[self._visual_servoing_cos_field_sizes[0]],[self._visual_servoing_cos_field_sizes[1]]], [], [cos_field_kernel])
+        self._visual_servoing_cos_field.set_global_inhibition(60.0)
+        self._visual_servoing_cos_field.set_relaxation_time(2.0)
+        self._visual_servoing_cos_field.set_name("visual_servoing_cos_field")
+        self.fields.append(self._visual_servoing_cos_field)
+
+        # create elementary behavior: move arm
+        visual_servoing_right_int_weight = numpy.ones(self._visual_servoing_field_sizes) * 2.0
+
+        self._visual_servoing_right = ElementaryBehavior(intention_field=self._visual_servoing_right_intention_field,
+                                             cos_field=self._visual_servoing_cos_field,
+                                             int_node_to_int_field_weight=visual_servoing_right_int_weight,
+                                             name="visual servoing right",
+                                             step_fields=True)
+
+        # connect move right arm intention node to its cos field, so that the peak
+        # forms in the center of the cos field (cos for the move-right-arm behavior)
+        int_node_to_cos_field_projection = DynamicField.Projection(0, move_head_field_dimensionality, set([]), [])
+        weight = math_tools.gauss_2d(self._visual_servoing_field_sizes, amplitude=4.2, sigmas=[1.5, 1.5], shifts=[self._visual_servoing_field_sizes[0]/2., self._visual_servoing_field_sizes[1]/2.])
+        int_node_to_cos_field_weight = DynamicField.Weight(weight)
+        DynamicField.connect(self._visual_servoing_right.get_intention_node(), self._visual_servoing_cos_field, [int_node_to_cos_field_projection, int_node_to_cos_field_weight])
+
+
+
 
 
         ###############################################################################################################
@@ -291,7 +336,7 @@ class GraspArchitecture():
 
         # create perception color-space field
         color_space_ee_field_dimensionality = 3
-        color_space_ee_kernel = Kernel.GaussKernel(10.0, [3.0] * color_space_ee_field_dimensionality)
+        color_space_ee_kernel = Kernel.GaussKernel(15.0, [3.0] * color_space_ee_field_dimensionality)
 
         self._color_space_ee_field_sizes = [self._move_head_field_sizes[0], self._move_head_field_sizes[1], self._find_color_ee_field_size]
         self._color_space_ee_field = DynamicField.DynamicField([[self._color_space_ee_field_sizes[0]],[self._color_space_ee_field_sizes[1]],[self._color_space_ee_field_sizes[2]]], [], [color_space_ee_kernel])
@@ -301,7 +346,7 @@ class GraspArchitecture():
         self.fields.append(self._color_space_ee_field)
 
         fc_int_to_color_space_ee_projection = DynamicField.Projection(self._find_color_ee.get_intention_field().get_dimensionality(), color_space_ee_field_dimensionality, set([0]), [2])
-        fc_int_to_color_space_ee_weight = DynamicField.Weight(3.0)
+        fc_int_to_color_space_ee_weight = DynamicField.Weight(3.5)
         DynamicField.connect(self._find_color_ee.get_intention_field(), self._color_space_ee_field, [fc_int_to_color_space_ee_weight, fc_int_to_color_space_ee_projection])
 
         color_space_ee_to_fc_cos_projection = DynamicField.Projection(color_space_ee_field_dimensionality, self._find_color_ee.get_cos_field().get_dimensionality(), set([2]), [0])
@@ -312,6 +357,15 @@ class GraspArchitecture():
         color_space_ee_to_move_arm_cos_projection = DynamicField.Projection(color_space_ee_field_dimensionality, self._move_left_arm.get_cos_field().get_dimensionality(), set([0,1]), [0,1])
         color_space_ee_to_move_arm_cos_weight = DynamicField.Weight(4.0)
         DynamicField.connect(self._color_space_ee_field, self._move_left_arm.get_cos_field(), [color_space_ee_to_move_arm_cos_weight, color_space_ee_to_move_arm_cos_projection])
+
+
+        color_space_ee_to_visual_servoing_right_int_projection = DynamicField.Projection(color_space_ee_field_dimensionality, visual_servoing_field_dimensionality, set([0,1]), [0,1])
+        color_space_ee_to_visual_servoing_right_int_weight = DynamicField.Weight(4.0)
+        DynamicField.connect(self._color_space_ee_field, self._visual_servoing_right.get_intention_field(), [color_space_ee_to_visual_servoing_right_int_weight, color_space_ee_to_visual_servoing_right_int_projection])
+
+        color_space_ee_to_visual_servoing_right_cos_projection = DynamicField.Projection(color_space_ee_field_dimensionality, visual_servoing_field_dimensionality, set([0,1]), [0,1])
+        color_space_ee_to_visual_servoing_right_cos_weight = DynamicField.Weight(4.0)
+        DynamicField.connect(self._color_space_ee_field, self._visual_servoing_right.get_cos_field(), [color_space_ee_to_visual_servoing_right_cos_weight, color_space_ee_to_visual_servoing_right_cos_projection])
 
 
         ###############################################################################################################
@@ -373,7 +427,7 @@ class GraspArchitecture():
         self._camera_field_sizes = self._camera_field.get_output_dimension_sizes()
 
         camera_to_color_space_weight = DynamicField.Weight(3.0)
-        camera_to_color_space_ee_weight = DynamicField.Weight(3.0)
+        camera_to_color_space_ee_weight = DynamicField.Weight(3.5)
         DynamicField.connect(self._camera_field, self._color_space_field, [camera_to_color_space_weight])
         DynamicField.connect(self._camera_field, self._color_space_ee_field, [camera_to_color_space_ee_weight])
 
@@ -392,7 +446,7 @@ class GraspArchitecture():
         ###############################################################################################################
 
         # create head sensor field
-        self._head_sensor_field = HeadSensorField.NaoHeadSensorField(use_robot_sensors = True)
+        self._head_sensor_field = HeadSensorField.NaoHeadSensorField()
         self._head_sensor_field.set_name("head_sensor_field")
         self.fields.append(self._head_sensor_field)
         self._head_sensor_field_sizes = self._head_sensor_field.get_output_dimension_sizes()
@@ -433,14 +487,16 @@ class GraspArchitecture():
         ###############################################################################################################
 
         # create end effector control connectable
-        self._end_effector_control_right = EndEffectorControl.PlaneRight(self._head_sensor_field, self._move_arm_field_sizes, end_effector_speed_fraction = 0.5, use_robot_sensors = True)
+        self._end_effector_control_right = EndEffectorControl.PlaneRight(self._head_sensor_field, self._move_arm_field_sizes, end_effector_speed_fraction = 0.5)
         DynamicField.connect(self._move_right_arm.get_intention_field(), self._end_effector_control_right)
-        self._end_effector_control_left = EndEffectorControl.PlaneLeft(self._head_sensor_field, self._move_arm_field_sizes, end_effector_speed_fraction = 0.5, use_robot_sensors = True)
+        self._end_effector_control_left = EndEffectorControl.PlaneLeft(self._head_sensor_field, self._move_arm_field_sizes, end_effector_speed_fraction = 0.5)
         DynamicField.connect(self._move_left_arm.get_intention_field(), self._end_effector_control_left)
 
+        self._end_effector_control_height_orient_right = EndEffectorControl.HeightOrientationRight(end_effector_speed_fraction = 0.5)
+        self._end_effector_control_height_orient_left = EndEffectorControl.HeightOrientationRight(end_effector_speed_fraction = 0.5)
 
-        self._end_effector_control_height_orient_right = EndEffectorControl.HeightOrientationRight(end_effector_speed_fraction = 0.5, use_robot_sensors = True)
-#        self._end_effector_control_height_orient_left = EndEffectorControl.HeightOrientationRight(end_effector_speed_fraction, use_robot_sensors = True)
+        self._end_effector_control_visual_right = EndEffectorControl.PlaneVisualRight(self._visual_servoing_field_sizes, end_effector_speed_fraction = 0.2)
+        DynamicField.connect(self._visual_servoing_right.get_intention_field(), self._end_effector_control_visual_right)
 
 
         ###############################################################################################################
@@ -448,11 +504,11 @@ class GraspArchitecture():
         ###############################################################################################################
 
         # create gripper control for the right hand
-        self._gripper_control_right = GripperControl.NaoGripperControlRight(self._gripper_field_size, gripper_speed_fraction = 1.0, use_robot_sensors = True)
+        self._gripper_control_right = GripperControl.NaoGripperControlRight(self._gripper_field_size, gripper_speed_fraction = 1.0)
         DynamicField.connect(self._gripper_right_open.get_intention_field(), self._gripper_control_right)
 
         # create gripper control for the left hand
-        self._gripper_control_left = GripperControl.NaoGripperControlLeft(self._gripper_field_size, gripper_speed_fraction = 1.0, use_robot_sensors = True)
+        self._gripper_control_left = GripperControl.NaoGripperControlLeft(self._gripper_field_size, gripper_speed_fraction = 1.0)
         DynamicField.connect(self._gripper_left_open.get_intention_field(), self._gripper_control_left)
 
 
@@ -461,12 +517,12 @@ class GraspArchitecture():
         ###############################################################################################################
 
         # create gripper sensor for the right hand
-        self._gripper_sensor_right = GripperSensor.NaoGripperSensorRight(self._gripper_field_size, use_robot_sensors = True)
+        self._gripper_sensor_right = GripperSensor.NaoGripperSensorRight(self._gripper_field_size)
         gripper_sensor_right_weight = DynamicField.Weight(4.0)
         DynamicField.connect(self._gripper_sensor_right, self._gripper_right_open.get_cos_field(), [gripper_sensor_right_weight])
 
         # create gripper sensor for the left hand
-        self._gripper_sensor_left = GripperSensor.NaoGripperSensorLeft(self._gripper_field_size, use_robot_sensors = True)
+        self._gripper_sensor_left = GripperSensor.NaoGripperSensorLeft(self._gripper_field_size)
         gripper_sensor_left_weight = DynamicField.Weight(4.0)
         DynamicField.connect(self._gripper_sensor_left, self._gripper_left_open.get_cos_field(), [gripper_sensor_left_weight])
 
@@ -507,7 +563,8 @@ class GraspArchitecture():
 
         self._preconditions.append(precondition(self._gripper_right_open, self._move_right_arm, self._task_node))
         self._preconditions.append(precondition(self._gripper_right_open, self._end_effector_control_height_orient_right.get_intention_node(), self._task_node))
-        self._preconditions.append(precondition(self._move_right_arm, self._gripper_right_close, self._task_node))
+        self._preconditions.append(precondition(self._move_right_arm, self._visual_servoing_right, self._task_node))
+        self._preconditions.append(precondition(self._visual_servoing_right, self._gripper_right_close, self._task_node))
 
         # left preconditions
         self._preconditions.append(precondition(self._side_left, self._gripper_left_open, self._task_node))
@@ -549,6 +606,7 @@ class GraspArchitecture():
         connect_to_task(self._task_node, self._gripper_right_open)
         connect_to_task(self._task_node, self._gripper_right_close)
         connect_to_task(self._task_node, self._find_color_ee)
+        connect_to_task(self._task_node, self._visual_servoing_right)
 
 
     def step(self):
@@ -594,6 +652,8 @@ class GraspArchitecture():
         self._gripper_sensor_left.step()
 
         self._end_effector_control_height_orient_right.step()
+        self._visual_servoing_right.step()
+        self._end_effector_control_visual_right.step()
 
         for node in self._preconditions:
             node.step() 
