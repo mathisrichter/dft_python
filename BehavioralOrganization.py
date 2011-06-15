@@ -122,23 +122,10 @@ class GraspArchitecture():
         self._move_right_arm_intention_field.set_name("move_right_arm_intention_field")
         self.fields.append(self._move_right_arm_intention_field)
 
-#        self._move_right_arm_height_intention_field = DynamicField.DynamicField([[15]], [], None)
-#        self._move_right_arm_height_intention_field.set_global_inhibition(60.0)
-#        self._move_right_arm_height_intention_field.set_relaxation_time(2.0)
-#        self._move_right_arm_height_intention_field.set_name("move_right_arm_height_intention_field")
-#        self.fields.append(self._move_right_height_arm_intention_field)
-
-#        self._move_right_arm_orient_intention_field = DynamicField.DynamicField([[15]], [], None)
-#        self._move_right_arm_orient_intention_field.set_global_inhibition(60.0)
-#        self._move_right_arm_orient_intention_field.set_relaxation_time(2.0)
-#        self._move_right_arm_orient_intention_field.set_name("move_right_arm_orient_intention_field")
-#        self.fields.append(self._move_right_arm_orient_intention_field)
-
-
         # move arm CoS field and its kernel
         move_arm_cos_field_dimensionality = move_head_field_dimensionality
         self._move_arm_cos_field_sizes = self._move_head_field_sizes
-        cos_field_kernel = Kernel.GaussKernel(10.0, [3.0] * move_arm_cos_field_dimensionality)
+        cos_field_kernel = Kernel.GaussKernel(15.0, [3.0] * move_arm_cos_field_dimensionality)
         self._move_arm_cos_field = DynamicField.DynamicField([[self._move_arm_cos_field_sizes[0]],[self._move_arm_cos_field_sizes[1]]], [], [cos_field_kernel])
         self._move_arm_cos_field.set_global_inhibition(60.0)
         self._move_arm_cos_field.set_relaxation_time(2.0)
@@ -157,13 +144,8 @@ class GraspArchitecture():
         # connect move right arm intention node to its cos field, so that the peak
         # forms in the center of the cos field (cos for the move-right-arm behavior)
         int_node_to_cos_field_projection = DynamicField.Projection(0, move_head_field_dimensionality, set([]), [])
-        weight = math_tools.gauss_2d(self._move_head_field_sizes, amplitude=2.0, sigmas=[2.0, 2.0], shifts=[self._move_head_field_sizes[0]/2., self._move_head_field_sizes[1]/2.])
-        int_node_to_cos_field_weight = DynamicField.Weight(weight)
+        int_node_to_cos_field_weight = DynamicField.Weight(3.0)
         DynamicField.connect(self._move_right_arm.get_intention_node(), self._move_arm_cos_field, [int_node_to_cos_field_projection, int_node_to_cos_field_weight])
-
-#        projection = DynamicField.Projection(0, self._move_arm_height_intention_field.get_dimensionality(), set([]), [])
-#        weight = math_tools.gauss_1d(self._move_arm_height_intention_field.get_output_sizes()[0], amplitude=6.0, sigma=1.0, shift=0.37)
-#        DynamicField.connect(self._move_right_arm.get_intention_node(), self._move_right_arm_height_intention_field, [projection, weight])
 
 
         ###############################################################################################################
@@ -190,8 +172,7 @@ class GraspArchitecture():
         # connect move arm intention node to its cos field, so that the peak
         # forms in the center of the cos field (cos for the move-left-arm behavior)
         int_node_to_cos_field_projection = DynamicField.Projection(0, move_head_field_dimensionality, set([]), [])
-        weight = math_tools.gauss_2d(self._move_head_field_sizes, amplitude=2.0, sigmas=[2.0, 2.0], shifts=[self._move_head_field_sizes[0]/2., self._move_head_field_sizes[1]/2.])
-        int_node_to_cos_field_weight = DynamicField.Weight(weight)
+        int_node_to_cos_field_weight = DynamicField.Weight(3.0)
         DynamicField.connect(self._move_left_arm.get_intention_node(), self._move_arm_cos_field, [int_node_to_cos_field_projection, int_node_to_cos_field_weight])
 
 
@@ -452,10 +433,14 @@ class GraspArchitecture():
         ###############################################################################################################
 
         # create end effector control connectable
-        self._end_effector_control_right = EndEffectorControl.NaoEndEffectorControlRight(self._head_sensor_field, self._move_arm_field_sizes, end_effector_speed_fraction = 0.5, use_robot_sensors = True)
+        self._end_effector_control_right = EndEffectorControl.PlaneRight(self._head_sensor_field, self._move_arm_field_sizes, end_effector_speed_fraction = 0.5, use_robot_sensors = True)
         DynamicField.connect(self._move_right_arm.get_intention_field(), self._end_effector_control_right)
-        self._end_effector_control_left = EndEffectorControl.NaoEndEffectorControlLeft(self._head_sensor_field, self._move_arm_field_sizes, end_effector_speed_fraction = 0.5, use_robot_sensors = True)
+        self._end_effector_control_left = EndEffectorControl.PlaneLeft(self._head_sensor_field, self._move_arm_field_sizes, end_effector_speed_fraction = 0.5, use_robot_sensors = True)
         DynamicField.connect(self._move_left_arm.get_intention_field(), self._end_effector_control_left)
+
+
+        self._end_effector_control_height_orient_right = EndEffectorControl.HeightOrientationRight(end_effector_speed_fraction = 0.5, use_robot_sensors = True)
+#        self._end_effector_control_height_orient_left = EndEffectorControl.HeightOrientationRight(end_effector_speed_fraction, use_robot_sensors = True)
 
 
         ###############################################################################################################
@@ -504,23 +489,43 @@ class GraspArchitecture():
         # PRECONDITION NODES
         ###############################################################################################################
 
-        # create precondition nodes
-        self._side_left_to_gripper_left_open_precondition = precondition(self._side_left, self._gripper_left_open, self._task_node)
-        self._side_right_to_gripper_right_open_precondition = precondition(self._side_right, self._gripper_right_open, self._task_node)
+        self._preconditions = []
 
-        self._side_left_to_gripper_left_close_precondition = precondition(self._side_left, self._gripper_left_close, self._task_node)
-        self._side_right_to_gripper_right_close_precondition = precondition(self._side_right, self._gripper_right_close, self._task_node)
+        # general preconditions
+        self._preconditions.append(precondition(self._move_head, self._find_color_ee, self._task_node))
 
-        self._move_head_to_gripper_left_open_precondition = precondition(self._move_head, self._gripper_left_open, self._task_node)
-        self._move_head_to_gripper_right_open_precondition = precondition(self._move_head, self._gripper_right_open, self._task_node)
+        # right preconditions
+        self._preconditions.append(precondition(self._side_right, self._gripper_right_open, self._task_node))
+        self._preconditions.append(precondition(self._side_right, self._move_right_arm, self._task_node))
+        self._preconditions.append(precondition(self._side_right, self._end_effector_control_height_orient_right.get_intention_node(), self._task_node))
+        self._preconditions.append(precondition(self._side_right, self._gripper_right_close, self._task_node))
 
-        self._gripper_left_open_to_move_left_arm_precondition = precondition(self._gripper_left_open, self._move_left_arm, self._task_node)
-        self._gripper_right_open_to_move_right_arm_precondition = precondition(self._gripper_right_open, self._move_right_arm, self._task_node)
+        self._preconditions.append(precondition(self._move_head, self._gripper_right_open, self._task_node))
+        self._preconditions.append(precondition(self._move_head, self._move_right_arm, self._task_node))
+        self._preconditions.append(precondition(self._move_head, self._end_effector_control_height_orient_right.get_intention_node(), self._task_node))
+        self._preconditions.append(precondition(self._move_head, self._gripper_right_close, self._task_node))
 
-        self._move_left_arm_to_gripper_left_close_precondition = precondition(self._move_left_arm, self._gripper_left_close, self._task_node)
-        self._move_right_arm_to_gripper_right_close_precondition = precondition(self._move_right_arm, self._gripper_right_close, self._task_node)
+        self._preconditions.append(precondition(self._gripper_right_open, self._move_right_arm, self._task_node))
+        self._preconditions.append(precondition(self._gripper_right_open, self._end_effector_control_height_orient_right.get_intention_node(), self._task_node))
+        self._preconditions.append(precondition(self._move_right_arm, self._gripper_right_close, self._task_node))
 
-        self._find_color_ee_precondition_node = precondition(self._move_head, self._find_color_ee, self._task_node)
+        # left preconditions
+        self._preconditions.append(precondition(self._side_left, self._gripper_left_open, self._task_node))
+        self._preconditions.append(precondition(self._side_left, self._move_left_arm, self._task_node))
+#        self._preconditions.append(precondition(self._side_left, self._end_effector_control_height_orient_left.get_intention_node(), self._task_node))
+        self._preconditions.append(precondition(self._side_left, self._gripper_left_close, self._task_node))
+
+        self._preconditions.append(precondition(self._move_head, self._gripper_left_open, self._task_node))
+        self._preconditions.append(precondition(self._move_head, self._move_left_arm, self._task_node))
+#        self._preconditions.append(precondition(self._move_head, self._end_effector_control_height_orient_left.get_intention_node(), self._task_node))
+        self._preconditions.append(precondition(self._move_head, self._gripper_left_close, self._task_node))
+
+        self._preconditions.append(precondition(self._gripper_left_open, self._move_left_arm, self._task_node))
+#        self._preconditions.append(precondition(self._gripper_left_open, self._end_effector_control_height_orient_left.get_intention_node(), self._task_node))
+        self._preconditions.append(precondition(self._move_left_arm, self._gripper_left_close, self._task_node))
+
+
+
 
 
         ###############################################################################################################
@@ -570,6 +575,7 @@ class GraspArchitecture():
         self._head_control.step()
         self._move_right_arm.step()
         self._move_left_arm.step()
+
         self._head_sensor_field.step()
         self._end_effector_control_right.step()
         self._end_effector_control_left.step()
@@ -584,24 +590,13 @@ class GraspArchitecture():
 #        print("left right competition 0: ", self._left_right_competition_nodes[0].get_activation())
 #        print("left right competition 1: ", self._left_right_competition_nodes[1].get_activation())
 
-        self._side_left_to_gripper_left_open_precondition.step()
-        self._side_right_to_gripper_right_open_precondition.step()
-        self._side_left_to_gripper_left_close_precondition.step()
-        self._side_right_to_gripper_right_close_precondition.step()
-
-        self._move_head_to_gripper_left_open_precondition.step()
-        self._move_head_to_gripper_right_open_precondition.step()
-
-        self._gripper_left_open_to_move_left_arm_precondition.step()
-        self._gripper_right_open_to_move_right_arm_precondition.step()
-
-        self._move_left_arm_to_gripper_left_close_precondition.step()
-        self._move_right_arm_to_gripper_right_close_precondition.step()
-
-        self._find_color_ee_precondition_node.step()
-
         self._gripper_sensor_right.step()
         self._gripper_sensor_left.step()
+
+        self._end_effector_control_height_orient_right.step()
+
+        for node in self._preconditions:
+            node.step() 
 
 
 
