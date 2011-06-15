@@ -13,7 +13,7 @@ change_sum = 1.0
 
 
 #intended_pos = numpy.array([0.09, -0.11, 0.38, math.pi/2.0, 0.0, 0.0])
-intended_pos = numpy.array([0.15, -0.02, 0.38, math.pi/2.0, 0.0, 0.0])
+intended_pos = numpy.array([0.15, -0.02, 0.37, math.pi/2.0, 0.0, 0.0])
 
 end_effector_x = DynamicField.DynamicField([], [], None)
 end_effector_x.set_resting_level(0.)

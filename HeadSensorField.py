@@ -54,7 +54,7 @@ class NaoHeadSensorField(DynamicField.DynamicField):
 
         # get the current height of the objects in torso space
         # the objects are at a height of 0.35 m
-        cam_z = cam_z - 0.33
+        cam_z = cam_z - 0.345
 
         # compute the x,y coordinates of where the end effector should go (in
         # torso space)
@@ -74,8 +74,8 @@ class NaoHeadSensorField(DynamicField.DynamicField):
         length_x = self._max_x - self._min_x
         length_y = self._max_y - self._min_y
 
-#        print("current x from cam: ", current_x)
-#        print("current y from cam: ", current_y)
+        print("current x from cam: ", current_x)
+        print("current y from cam: ", current_y)
 
         # convert the target coordinates into field coordinates
         end_effector_target_x = ((current_x - self._min_x) / length_x) * self._output_dimension_sizes[0]

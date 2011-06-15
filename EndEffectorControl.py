@@ -17,12 +17,14 @@ class NaoEndEffectorControlRight(DynamicField.Connectable):
         self._input_dimension_sizes = input_dimension_sizes
         self._head_sensor_field = head_sensor_field
 
+        self._file = open("right_ee_pos_0.dat", 'w')
+
         # naoqi proxy to talk to the motion module
         self._motion_proxy = ALProxy("ALMotion", "192.168.0.102", 9559)
         # set the stiffness of the arm to 1.0, so it will move
-        self._motion_proxy.setStiffnesses("RArm", 1.0)
+        self._motion_proxy.setStiffnesses("RArm", 0.0)
 
-        initial_z = 0.35
+        initial_z = 0.37
         initial_alpha = math.pi / 2.0
 
         current_pos = self._motion_proxy.getPosition("RArm", 2, True)
@@ -56,6 +58,7 @@ class NaoEndEffectorControlRight(DynamicField.Connectable):
 
     def __del__(self):
         self._motion_proxy.setStiffnesses("RArm", 0.0)
+        self._file.close()
 
     def _step_computation(self):
         # extract x and y position of peak
@@ -107,6 +110,8 @@ class NaoEndEffectorControlRight(DynamicField.Connectable):
         self._end_effector_x.set_boost(end_effector_x_boost)
         self._end_effector_y.set_boost(end_effector_y_boost)
 
+        self._file.write("" + str(current_y) + "\t" + str(current_x) + "\n")
+
         x_dot = self._end_effector_x.get_change(current_x)[0]
         y_dot = self._end_effector_y.get_change(current_y)[0]
         z_dot = self._end_effector_z.get_change(current_z)[0]
@@ -132,7 +137,7 @@ class NaoEndEffectorControlRight(DynamicField.Connectable):
                                0., # orientation beta
                                0.] # orientation gamma
 
-        print("ee change: ", end_effector_change)
+#        print("ee change: ", end_effector_change)
 
         # move the arm towards the peak
         # (the last parameter is the axis mask and determines, what should be
@@ -156,6 +161,8 @@ class NaoEndEffectorControlLeft(DynamicField.Connectable):
         initial_x = 0.05
         initial_y = 0.10
         initial_z = 0.35
+
+        self._file = open("left_ee_pos_0.dat", 'w')
 
         # create nodes controlling the end effector
         self._end_effector_x = DynamicField.DynamicField([], [], None)
@@ -181,7 +188,7 @@ class NaoEndEffectorControlLeft(DynamicField.Connectable):
         # naoqi proxy to talk to the motion module
         self._motion_proxy = ALProxy("ALMotion", "192.168.0.102", 9559)
         # set the stiffness of the arm to 1.0, so it will move
-        self._motion_proxy.setStiffnesses("LArm", 1.0)
+        self._motion_proxy.setStiffnesses("LArm", 0.0)
         # move the end effector to an initial position to make grasping
         # easier
         # [position x, pos y, pos z, orientation alpha, ori beta, ori gamma]
@@ -224,6 +231,8 @@ class NaoEndEffectorControlLeft(DynamicField.Connectable):
         current_z = self._motion_proxy.getPosition("LArm", 2, True)[2]
         self._end_effector_x.set_boost(end_effector_x_boost)
         self._end_effector_y.set_boost(end_effector_y_boost)
+
+        self._file.write("" + str(current_y) + "\t" + str(current_x) + "\n")
 
         x_dot = self._end_effector_x.get_change(current_x)[0]
         y_dot = self._end_effector_y.get_change(current_y)[0]

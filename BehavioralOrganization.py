@@ -92,6 +92,7 @@ class GraspArchitecture():
                                              int_node_to_int_field_weight=move_head_int_weight,
                                              name="move head",
                                              step_fields=True)
+        self._move_head.get_cos_node().set_relaxation_time(10.0)
 
         # connect the move head intention and CoS field
         move_head_int_field_to_cos_field_weight = DynamicField.Weight(4.0)
@@ -451,9 +452,9 @@ class GraspArchitecture():
         ###############################################################################################################
 
         # create end effector control connectable
-        self._end_effector_control_right = EndEffectorControl.NaoEndEffectorControlRight(self._head_sensor_field, self._move_arm_field_sizes, end_effector_speed_fraction = 0.1, use_robot_sensors = True)
+        self._end_effector_control_right = EndEffectorControl.NaoEndEffectorControlRight(self._head_sensor_field, self._move_arm_field_sizes, end_effector_speed_fraction = 0.5, use_robot_sensors = True)
         DynamicField.connect(self._move_right_arm.get_intention_field(), self._end_effector_control_right)
-        self._end_effector_control_left = EndEffectorControl.NaoEndEffectorControlLeft(self._head_sensor_field, self._move_arm_field_sizes, end_effector_speed_fraction = 0.1, use_robot_sensors = True)
+        self._end_effector_control_left = EndEffectorControl.NaoEndEffectorControlLeft(self._head_sensor_field, self._move_arm_field_sizes, end_effector_speed_fraction = 0.5, use_robot_sensors = True)
         DynamicField.connect(self._move_left_arm.get_intention_field(), self._end_effector_control_left)
 
 
