@@ -336,7 +336,7 @@ class GraspArchitecture():
 
         # create perception color-space field
         color_space_ee_field_dimensionality = 3
-        color_space_ee_kernel = Kernel.GaussKernel(15.0, [3.0] * color_space_ee_field_dimensionality)
+        color_space_ee_kernel = Kernel.GaussKernel(20.0, [3.0] * color_space_ee_field_dimensionality)
 
         self._color_space_ee_field_sizes = [self._move_head_field_sizes[0], self._move_head_field_sizes[1], self._find_color_ee_field_size]
         self._color_space_ee_field = DynamicField.DynamicField([[self._color_space_ee_field_sizes[0]],[self._color_space_ee_field_sizes[1]],[self._color_space_ee_field_sizes[2]]], [], [color_space_ee_kernel])
@@ -360,11 +360,11 @@ class GraspArchitecture():
 
 
         color_space_ee_to_visual_servoing_right_int_projection = DynamicField.Projection(color_space_ee_field_dimensionality, visual_servoing_field_dimensionality, set([0,1]), [0,1])
-        color_space_ee_to_visual_servoing_right_int_weight = DynamicField.Weight(4.0)
+        color_space_ee_to_visual_servoing_right_int_weight = DynamicField.Weight(4.5)
         DynamicField.connect(self._color_space_ee_field, self._visual_servoing_right.get_intention_field(), [color_space_ee_to_visual_servoing_right_int_weight, color_space_ee_to_visual_servoing_right_int_projection])
 
         color_space_ee_to_visual_servoing_right_cos_projection = DynamicField.Projection(color_space_ee_field_dimensionality, visual_servoing_field_dimensionality, set([0,1]), [0,1])
-        color_space_ee_to_visual_servoing_right_cos_weight = DynamicField.Weight(4.0)
+        color_space_ee_to_visual_servoing_right_cos_weight = DynamicField.Weight(4.5)
         DynamicField.connect(self._color_space_ee_field, self._visual_servoing_right.get_cos_field(), [color_space_ee_to_visual_servoing_right_cos_weight, color_space_ee_to_visual_servoing_right_cos_projection])
 
 
@@ -487,15 +487,15 @@ class GraspArchitecture():
         ###############################################################################################################
 
         # create end effector control connectable
-        self._end_effector_control_right = EndEffectorControl.PlaneRight(self._head_sensor_field, self._move_arm_field_sizes, end_effector_speed_fraction = 0.5)
+        self._end_effector_control_right = EndEffectorControl.PlaneRight(self._head_sensor_field, self._move_arm_field_sizes, end_effector_speed_fraction = 0.1)
         DynamicField.connect(self._move_right_arm.get_intention_field(), self._end_effector_control_right)
-        self._end_effector_control_left = EndEffectorControl.PlaneLeft(self._head_sensor_field, self._move_arm_field_sizes, end_effector_speed_fraction = 0.5)
+        self._end_effector_control_left = EndEffectorControl.PlaneLeft(self._head_sensor_field, self._move_arm_field_sizes, end_effector_speed_fraction = 0.1)
         DynamicField.connect(self._move_left_arm.get_intention_field(), self._end_effector_control_left)
 
-        self._end_effector_control_height_orient_right = EndEffectorControl.HeightOrientationRight(end_effector_speed_fraction = 0.5)
-        self._end_effector_control_height_orient_left = EndEffectorControl.HeightOrientationRight(end_effector_speed_fraction = 0.5)
+        self._end_effector_control_height_orient_right = EndEffectorControl.HeightOrientationRight(end_effector_speed_fraction = 0.4)
+        self._end_effector_control_height_orient_left = EndEffectorControl.HeightOrientationRight(end_effector_speed_fraction = 0.4)
 
-        self._end_effector_control_visual_right = EndEffectorControl.PlaneVisualRight(self._visual_servoing_field_sizes, end_effector_speed_fraction = 0.2)
+        self._end_effector_control_visual_right = EndEffectorControl.PlaneVisualRight(self._visual_servoing_field_sizes, end_effector_speed_fraction = 0.1)
         DynamicField.connect(self._visual_servoing_right.get_intention_field(), self._end_effector_control_visual_right)
 
 

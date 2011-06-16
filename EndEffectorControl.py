@@ -34,7 +34,7 @@ class HeightOrientationRight(DynamicField.Connectable):
         return self._intention_node
 
     def _get_change(self, current_value, attractor_value):
-        return self._intention_node.get_output()[0] * (0.1 * (-1 * current_value + attractor_value))
+        return self._intention_node.get_output()[0] * (0.5 * (-1 * current_value + attractor_value))
 
     def _step_computation(self):
         self._intention_node.step()
@@ -155,26 +155,10 @@ class PlaneVisualRight(DynamicField.Connectable):
         self._file.close()
 
     def _step_computation(self):
-        # extract x and y position of peak
-        # the x and y coordinates are switched in the field, in relation to the
-        # robot coordinate system
         int_field_output = self.get_incoming_connectables()[0].get_output()
         int_field_output_x = int_field_output.max(0)
         int_field_output_y = int_field_output.max(1)
-#        print("int field output: ", str(int_field_output))
 
-#        height_int_field_output = self.get_incoming_connectables()[1].get_output()
-#        self._end_effector_z.set_normalization_factor(height_int_field_output.sum())
-#        field_length_z = len(height_int_field_output)
-
-#        height_ramp = numpy.linspace(0.0, 
-
-
-        # set the normalization factor of the end effector nodes
-#        self._end_effector_x.set_normalization_factor(int_field_output_x.sum())
-#        self._end_effector_y.set_normalization_factor(int_field_output_y.sum())
-
-        # compute ramps for x and y direction
         field_length_x = len(int_field_output_x)
         field_length_y = len(int_field_output_y)
 
@@ -184,61 +168,22 @@ class PlaneVisualRight(DynamicField.Connectable):
         ramp_x = numpy.linspace(-1.0, 1.0, field_length_x)
         ramp_y = numpy.linspace(-1.0, 1.0, field_length_y)
 
-#        print("ramp x: ", str(ramp_x))
-#        print("ramp y: ", str(ramp_y))
-
         print("x output: ", int_field_output_x)
         print("y output: ", int_field_output_y)
 
-        # get the force values for x,y towards the peak.
-        end_effector_x_boost = numpy.dot(int_field_output_x, ramp_x)
-        end_effector_y_boost = numpy.dot(int_field_output_y, ramp_y)
-
-#        print("boost x: ", str(end_effector_x_boost))
-#        print("boost y: ", str(end_effector_y_boost))
-
-        current_pos = self._motion_proxy.getPosition("RArm", 2, True)
-        current_x = current_pos[0]
-        current_y = current_pos[1]
-        self._end_effector_x.set_boost(end_effector_x_boost)
-        self._end_effector_y.set_boost(end_effector_y_boost)
-
-
-#        x_dot = self._end_effector_x.get_change(current_x)[0]
-#        y_dot = self._end_effector_y.get_change(current_y)[0]
-
-        x_dot = end_effector_x_boost / 100.
-        y_dot = end_effector_y_boost / 100.
+        x_dot = numpy.dot(int_field_output_x, ramp_x) / -1000.0
+        y_dot = numpy.dot(int_field_output_y, ramp_y) /  1000.0
 
         print("x dot: ", x_dot)
         print("y dot: ", y_dot)
 
-#        if (x_dot is None):
-#            print("x dot is none")
-#        if (y_dot is None):
-#            print("y dot is none")
-#        print("current ee x: ", str(current_x))
-#        print("current ee y: ", str(current_y))
-#        print("current ee z: ", str(current_z))
-
-#        print("x dot: ", str(x_dot))
-#        print("y dot: ", str(y_dot))
-#        print("z dot: ", str(z_dot))
-
-        # compute the change values for x,y of the end_effector
         end_effector_change = [x_dot,
                                y_dot,
                                0.0,
                                0.0,
-                               0., # orientation beta
-                               0.] # orientation gamma
+                               0.0, # orientation beta
+                               0.0] # orientation gamma
 
-#        print("ee change: ", end_effector_change)
-
-        # move the arm towards the peak
-        # (the last parameter is the axis mask and determines, what should be
-        # controlled: 7 for position only, 56 for orientation only, and 63
-        # for position and orientation
         self._motion_proxy.changePosition("RArm", 2, end_effector_change, self._end_effector_speed_fraction, 3)
 
 
