@@ -19,7 +19,7 @@ class NaoGripperSensorRight(DynamicField.DynamicField):
         # get the current position of the gripper
         gripper_pos = self._motion_proxy.getAngles("RHand", self._use_robot_sensors)[0]
 
-        gripper_field_pos = gripper_pos * (self._output_dimension_sizes[0])
+        gripper_field_pos = gripper_pos * (self._output_dimension_sizes[0] - 1)
 
         # create a Gaussian activation pattern at the target location
         activation = math_tools.gauss_1d(self._output_dimension_sizes[0], 6.0, 1.0, gripper_field_pos) - 5.0
@@ -43,7 +43,7 @@ class NaoGripperSensorLeft(DynamicField.DynamicField):
         # get the current position of the gripper
         gripper_pos = self._motion_proxy.getAngles("LHand", self._use_robot_sensors)[0]
 
-        gripper_field_pos = gripper_pos * (self._output_dimension_sizes[0])
+        gripper_field_pos = gripper_pos * (self._output_dimension_sizes[0] - 1)
 
         # create a Gaussian activation pattern at the target location
         activation = math_tools.gauss_1d(self._output_dimension_sizes[0], 6.0, 1.0, gripper_field_pos) - 5.0

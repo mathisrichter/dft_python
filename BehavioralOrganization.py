@@ -47,7 +47,7 @@ class GraspArchitecture():
 
         # create elementary behavior: find color ee marker
         self._find_color_ee_field_size = 15
-        find_color_ee_int_weight = math_tools.gauss_1d(self._find_color_ee_field_size, amplitude=15.0, sigma=0.5, shift=7.0)
+        find_color_ee_int_weight = math_tools.gauss_1d(self._find_color_ee_field_size, amplitude=15.0, sigma=0.5, shift=8.0)
 
         self._find_color_ee = ElementaryBehavior.with_internal_fields(field_dimensionality=1,
                                                     field_sizes=[[self._find_color_ee_field_size]],
@@ -91,7 +91,8 @@ class GraspArchitecture():
                                              cos_field=self._move_head_cos_field,
                                              int_node_to_int_field_weight=move_head_int_weight,
                                              name="move head",
-                                             step_fields=True)
+                                             step_fields=True,
+                                             reactivating=True)
         self._move_head.get_cos_node().set_relaxation_time(10.0)
 
         # connect the move head intention and CoS field
@@ -148,6 +149,35 @@ class GraspArchitecture():
         DynamicField.connect(self._move_right_arm.get_intention_node(), self._move_arm_cos_field, [int_node_to_cos_field_projection, int_node_to_cos_field_weight])
 
 
+
+        ###############################################################################################################
+        # MOVE LEFT ARM
+        ###############################################################################################################
+
+        # move left arm intention field and its kernel
+        intention_field_kernel = Kernel.GaussKernel(10.0, [3.0] * move_arm_field_dimensionality)
+        self._move_left_arm_intention_field = DynamicField.DynamicField([[self._move_arm_field_sizes[0]],[self._move_arm_field_sizes[1]]], [], [intention_field_kernel])
+        self._move_left_arm_intention_field.set_global_inhibition(160.0)
+        self._move_left_arm_intention_field.set_relaxation_time(2.0)
+        self._move_left_arm_intention_field.set_name("move_left_arm_intention_field")
+        self.fields.append(self._move_left_arm_intention_field)
+
+        # create elementary behavior: move left arm
+        move_left_arm_int_weight = numpy.ones(self._move_arm_field_sizes) * 2.0
+
+        self._move_left_arm = ElementaryBehavior(intention_field=self._move_left_arm_intention_field,
+                                             cos_field=self._move_arm_cos_field,
+                                             int_node_to_int_field_weight=move_left_arm_int_weight,
+                                             name="move left arm",
+                                             step_fields=True)
+
+        # connect move arm intention node to its cos field, so that the peak
+        # forms in the center of the cos field (cos for the move-left-arm behavior)
+        int_node_to_cos_field_projection = DynamicField.Projection(0, move_head_field_dimensionality, set([]), [])
+        int_node_to_cos_field_weight = DynamicField.Weight(3.0)
+        DynamicField.connect(self._move_left_arm.get_intention_node(), self._move_arm_cos_field, [int_node_to_cos_field_projection, int_node_to_cos_field_weight])
+
+
         ###############################################################################################################
         # VISUAL SERVOING RIGHT ARM
         ###############################################################################################################
@@ -190,35 +220,36 @@ class GraspArchitecture():
         DynamicField.connect(self._visual_servoing_right.get_intention_node(), self._visual_servoing_cos_field, [int_node_to_cos_field_projection, int_node_to_cos_field_weight])
 
 
-
-
-
         ###############################################################################################################
-        # MOVE LEFT ARM
+        # VISUAL SERVOING LEFT ARM
         ###############################################################################################################
 
-        # move left arm intention field and its kernel
-        intention_field_kernel = Kernel.GaussKernel(10.0, [3.0] * move_arm_field_dimensionality)
-        self._move_left_arm_intention_field = DynamicField.DynamicField([[self._move_arm_field_sizes[0]],[self._move_arm_field_sizes[1]]], [], [intention_field_kernel])
-        self._move_left_arm_intention_field.set_global_inhibition(160.0)
-        self._move_left_arm_intention_field.set_relaxation_time(2.0)
-        self._move_left_arm_intention_field.set_name("move_left_arm_intention_field")
-        self.fields.append(self._move_left_arm_intention_field)
+        visual_servoing_field_dimensionality = 2
+        self._visual_servoing_field_sizes = self._move_head_field_sizes
 
-        # create elementary behavior: move left arm
-        move_left_arm_int_weight = numpy.ones(self._move_arm_field_sizes) * 2.0
+        # visual servoing left arm intention field and kernel
+        intention_field_kernel = Kernel.GaussKernel(10.0, [3.0] * visual_servoing_field_dimensionality)
+        self._visual_servoing_left_intention_field = DynamicField.DynamicField([[self._visual_servoing_field_sizes[0]],[self._visual_servoing_field_sizes[1]]], [], [intention_field_kernel])
+        self._visual_servoing_left_intention_field.set_global_inhibition(60.0)
+        self._visual_servoing_left_intention_field.set_relaxation_time(2.0)
+        self._visual_servoing_left_intention_field.set_name("visual_servoing_left_intention_field")
+        self.fields.append(self._visual_servoing_left_intention_field)
 
-        self._move_left_arm = ElementaryBehavior(intention_field=self._move_left_arm_intention_field,
-                                             cos_field=self._move_arm_cos_field,
-                                             int_node_to_int_field_weight=move_left_arm_int_weight,
-                                             name="move left arm",
+        # create elementary behavior: move arm
+        visual_servoing_left_int_weight = numpy.ones(self._visual_servoing_field_sizes) * 2.0
+
+        self._visual_servoing_left = ElementaryBehavior(intention_field=self._visual_servoing_left_intention_field,
+                                             cos_field=self._visual_servoing_cos_field,
+                                             int_node_to_int_field_weight=visual_servoing_left_int_weight,
+                                             name="visual servoing left",
                                              step_fields=True)
 
-        # connect move arm intention node to its cos field, so that the peak
+        # connect move left arm intention node to its cos field, so that the peak
         # forms in the center of the cos field (cos for the move-left-arm behavior)
         int_node_to_cos_field_projection = DynamicField.Projection(0, move_head_field_dimensionality, set([]), [])
-        int_node_to_cos_field_weight = DynamicField.Weight(3.0)
-        DynamicField.connect(self._move_left_arm.get_intention_node(), self._move_arm_cos_field, [int_node_to_cos_field_projection, int_node_to_cos_field_weight])
+        weight = math_tools.gauss_2d(self._visual_servoing_field_sizes, amplitude=4.2, sigmas=[1.5, 1.5], shifts=[self._visual_servoing_field_sizes[0]/2., self._visual_servoing_field_sizes[1]/2.])
+        int_node_to_cos_field_weight = DynamicField.Weight(weight)
+        DynamicField.connect(self._visual_servoing_left.get_intention_node(), self._visual_servoing_cos_field, [int_node_to_cos_field_projection, int_node_to_cos_field_weight])
 
 
         ###############################################################################################################
@@ -230,28 +261,28 @@ class GraspArchitecture():
         self._gripper_field_size = 15
 
         # gripper left intention field and its kernel
-        intention_field_kernel = Kernel.GaussKernel(15.0, [1.0] * gripper_field_dimensionality)
+        intention_field_kernel = Kernel.GaussKernel(10.0, [1.0] * gripper_field_dimensionality)
         self._gripper_left_intention_field = DynamicField.DynamicField([[self._gripper_field_size]], [], [intention_field_kernel])
         self._gripper_left_intention_field.set_global_inhibition(50.0)
 
         # gripper CoS field and its kernel
-        cos_field_kernel = Kernel.GaussKernel(15.0, [1.0] * gripper_field_dimensionality)
+        cos_field_kernel = Kernel.GaussKernel(8.0, [1.0] * gripper_field_dimensionality)
         self._gripper_left_cos_field = DynamicField.DynamicField([[self._gripper_field_size]], [], [cos_field_kernel])
-        self._gripper_left_cos_field.set_global_inhibition(50.0)
+        self._gripper_left_cos_field.set_global_inhibition(60.0)
 
         # connect the gripper left intention and CoS field
-        gripper_left_int_field_to_cos_field_weight = DynamicField.Weight(2.5)
+        gripper_left_int_field_to_cos_field_weight = DynamicField.Weight(3.0)
         DynamicField.connect(self._gripper_left_intention_field, self._gripper_left_cos_field, [gripper_left_int_field_to_cos_field_weight])
 
         # create elementary behavior: gripper left close
-        gripper_left_close_int_weight = math_tools.gauss_1d(self._gripper_field_size, amplitude=15, sigma=0.5, shift=1.0)
+        gripper_left_close_int_weight = math_tools.gauss_1d(self._gripper_field_size, amplitude=10, sigma=0.5, shift=1.0)
         self._gripper_left_close = ElementaryBehavior(intention_field=self._gripper_left_intention_field,
                                                   cos_field=self._gripper_left_cos_field,
                                                   int_node_to_int_field_weight=gripper_left_close_int_weight,
                                                   name="gripper left close")
 
         # create elementary behavior: gripper open
-        gripper_left_open_int_weight = math_tools.gauss_1d(self._gripper_field_size, amplitude=15, sigma=0.5, shift=self._gripper_field_size-1.0)
+        gripper_left_open_int_weight = math_tools.gauss_1d(self._gripper_field_size, amplitude=10, sigma=0.5, shift=self._gripper_field_size-1.0)
         self._gripper_left_open = ElementaryBehavior(intention_field=self._gripper_left_intention_field,
                                                   cos_field=self._gripper_left_cos_field,
                                                   int_node_to_int_field_weight=gripper_left_open_int_weight,
@@ -268,28 +299,28 @@ class GraspArchitecture():
         ###############################################################################################################
 
         # gripper right intention field and its kernel
-        intention_field_kernel = Kernel.GaussKernel(15.0, [1.0] * gripper_field_dimensionality)
+        intention_field_kernel = Kernel.GaussKernel(10.0, [1.0] * gripper_field_dimensionality)
         self._gripper_right_intention_field = DynamicField.DynamicField([[self._gripper_field_size]], [], [intention_field_kernel])
         self._gripper_right_intention_field.set_global_inhibition(50.0)
 
         # gripper CoS field and its kernel
-        cos_field_kernel = Kernel.GaussKernel(15.0, [1.0] * gripper_field_dimensionality)
+        cos_field_kernel = Kernel.GaussKernel(8.0, [1.0] * gripper_field_dimensionality)
         self._gripper_right_cos_field = DynamicField.DynamicField([[self._gripper_field_size]], [], [cos_field_kernel])
-        self._gripper_right_cos_field.set_global_inhibition(50.0)
+        self._gripper_right_cos_field.set_global_inhibition(60.0)
 
         # connect the gripper right intention and CoS field
-        gripper_right_int_field_to_cos_field_weight = DynamicField.Weight(2.5)
+        gripper_right_int_field_to_cos_field_weight = DynamicField.Weight(3.0)
         DynamicField.connect(self._gripper_right_intention_field, self._gripper_right_cos_field, [gripper_right_int_field_to_cos_field_weight])
 
         # create elementary behavior: gripper right close
-        gripper_right_close_int_weight = math_tools.gauss_1d(self._gripper_field_size, amplitude=15, sigma=0.5, shift=1.0)
+        gripper_right_close_int_weight = math_tools.gauss_1d(self._gripper_field_size, amplitude=10, sigma=0.5, shift=1.0)
         self._gripper_right_close = ElementaryBehavior(intention_field=self._gripper_right_intention_field,
                                                   cos_field=self._gripper_right_cos_field,
                                                   int_node_to_int_field_weight=gripper_right_close_int_weight,
                                                   name="gripper right close")
 
         # create elementary behavior: gripper open
-        gripper_right_open_int_weight = math_tools.gauss_1d(self._gripper_field_size, amplitude=15, sigma=0.5, shift=self._gripper_field_size-1.0)
+        gripper_right_open_int_weight = math_tools.gauss_1d(self._gripper_field_size, amplitude=10, sigma=0.5, shift=self._gripper_field_size-1.0)
         self._gripper_right_open = ElementaryBehavior(intention_field=self._gripper_right_intention_field,
                                                   cos_field=self._gripper_right_cos_field,
                                                   int_node_to_int_field_weight=gripper_right_open_int_weight,
@@ -366,6 +397,14 @@ class GraspArchitecture():
         color_space_ee_to_visual_servoing_right_cos_projection = DynamicField.Projection(color_space_ee_field_dimensionality, visual_servoing_field_dimensionality, set([0,1]), [0,1])
         color_space_ee_to_visual_servoing_right_cos_weight = DynamicField.Weight(4.5)
         DynamicField.connect(self._color_space_ee_field, self._visual_servoing_right.get_cos_field(), [color_space_ee_to_visual_servoing_right_cos_weight, color_space_ee_to_visual_servoing_right_cos_projection])
+
+        color_space_ee_to_visual_servoing_left_int_projection = DynamicField.Projection(color_space_ee_field_dimensionality, visual_servoing_field_dimensionality, set([0,1]), [0,1])
+        color_space_ee_to_visual_servoing_left_int_weight = DynamicField.Weight(4.5)
+        DynamicField.connect(self._color_space_ee_field, self._visual_servoing_left.get_intention_field(), [color_space_ee_to_visual_servoing_left_int_weight, color_space_ee_to_visual_servoing_left_int_projection])
+
+        color_space_ee_to_visual_servoing_left_cos_projection = DynamicField.Projection(color_space_ee_field_dimensionality, visual_servoing_field_dimensionality, set([0,1]), [0,1])
+        color_space_ee_to_visual_servoing_left_cos_weight = DynamicField.Weight(4.5)
+        DynamicField.connect(self._color_space_ee_field, self._visual_servoing_left.get_cos_field(), [color_space_ee_to_visual_servoing_left_cos_weight, color_space_ee_to_visual_servoing_left_cos_projection])
 
 
         ###############################################################################################################
@@ -492,11 +531,14 @@ class GraspArchitecture():
         self._end_effector_control_left = EndEffectorControl.PlaneLeft(self._head_sensor_field, self._move_arm_field_sizes, end_effector_speed_fraction = 0.1)
         DynamicField.connect(self._move_left_arm.get_intention_field(), self._end_effector_control_left)
 
-        self._end_effector_control_height_orient_right = EndEffectorControl.HeightOrientationRight(end_effector_speed_fraction = 0.4)
-        self._end_effector_control_height_orient_left = EndEffectorControl.HeightOrientationRight(end_effector_speed_fraction = 0.4)
+        self._end_effector_control_height_orient_right = EndEffectorControl.HeightOrientationRight(end_effector_speed_fraction = 0.2)
+        self._end_effector_control_height_orient_left = EndEffectorControl.HeightOrientationLeft(end_effector_speed_fraction = 0.2)
 
         self._end_effector_control_visual_right = EndEffectorControl.PlaneVisualRight(self._visual_servoing_field_sizes, end_effector_speed_fraction = 0.1)
         DynamicField.connect(self._visual_servoing_right.get_intention_field(), self._end_effector_control_visual_right)
+
+        self._end_effector_control_visual_left = EndEffectorControl.PlaneVisualLeft(self._visual_servoing_field_sizes, end_effector_speed_fraction = 0.1)
+        DynamicField.connect(self._visual_servoing_left.get_intention_field(), self._end_effector_control_visual_left)
 
 
         ###############################################################################################################
@@ -569,20 +611,18 @@ class GraspArchitecture():
         # left preconditions
         self._preconditions.append(precondition(self._side_left, self._gripper_left_open, self._task_node))
         self._preconditions.append(precondition(self._side_left, self._move_left_arm, self._task_node))
-#        self._preconditions.append(precondition(self._side_left, self._end_effector_control_height_orient_left.get_intention_node(), self._task_node))
+        self._preconditions.append(precondition(self._side_left, self._end_effector_control_height_orient_left.get_intention_node(), self._task_node))
         self._preconditions.append(precondition(self._side_left, self._gripper_left_close, self._task_node))
 
         self._preconditions.append(precondition(self._move_head, self._gripper_left_open, self._task_node))
         self._preconditions.append(precondition(self._move_head, self._move_left_arm, self._task_node))
-#        self._preconditions.append(precondition(self._move_head, self._end_effector_control_height_orient_left.get_intention_node(), self._task_node))
+        self._preconditions.append(precondition(self._move_head, self._end_effector_control_height_orient_left.get_intention_node(), self._task_node))
         self._preconditions.append(precondition(self._move_head, self._gripper_left_close, self._task_node))
 
         self._preconditions.append(precondition(self._gripper_left_open, self._move_left_arm, self._task_node))
-#        self._preconditions.append(precondition(self._gripper_left_open, self._end_effector_control_height_orient_left.get_intention_node(), self._task_node))
-        self._preconditions.append(precondition(self._move_left_arm, self._gripper_left_close, self._task_node))
-
-
-
+        self._preconditions.append(precondition(self._gripper_left_open, self._end_effector_control_height_orient_left.get_intention_node(), self._task_node))
+        self._preconditions.append(precondition(self._move_left_arm, self._visual_servoing_left, self._task_node))
+        self._preconditions.append(precondition(self._visual_servoing_left, self._gripper_left_close, self._task_node))
 
 
         ###############################################################################################################
@@ -607,6 +647,7 @@ class GraspArchitecture():
         connect_to_task(self._task_node, self._gripper_right_close)
         connect_to_task(self._task_node, self._find_color_ee)
         connect_to_task(self._task_node, self._visual_servoing_right)
+        connect_to_task(self._task_node, self._visual_servoing_left)
 
 
     def step(self):
@@ -614,20 +655,16 @@ class GraspArchitecture():
         self._camera_field.step()
         self._find_color.step()
         self._find_color_ee.step()
-#        self._perception_ee_field.step()
         self._color_space_field.step()
         self._color_space_ee_field.step()
         self._spatial_target_field.step()
         self._gripper_left_intention_field.step()
         self._gripper_left_cos_field.step()
         self._gripper_left_open.step()
-#        print("gripper open left int: ", self._gripper_left_open.get_intention_node().get_activation())
-
         self._gripper_left_close.step()
         self._gripper_right_intention_field.step()
         self._gripper_right_cos_field.step()
         self._gripper_right_open.step()
-#        print("gripper open right int: ", self._gripper_right_open.get_intention_node().get_activation())
         self._gripper_right_close.step()
         self._move_head.step()
         self._head_control.step()
@@ -652,8 +689,11 @@ class GraspArchitecture():
         self._gripper_sensor_left.step()
 
         self._end_effector_control_height_orient_right.step()
+        self._end_effector_control_height_orient_left.step()
         self._visual_servoing_right.step()
+        self._visual_servoing_left.step()
         self._end_effector_control_visual_right.step()
+        self._end_effector_control_visual_left.step()
 
         for node in self._preconditions:
             node.step() 
@@ -898,9 +938,13 @@ class ElementaryBehavior:
 
         # connect the node that inhibits the intention node (either cos or cos-memory) with the intention node
         intention_inhibition_node = self._cos_memory_node
-        if (self._reactivating):
-            intention_inhibition_node = self._cos_node
-        DynamicField.connect(intention_inhibition_node, self._intention_node, [self._int_inhibition_weight])
+#        if (self._reactivating):
+#            intention_inhibition_node = self._cos_node
+#        DynamicField.connect(intention_inhibition_node, self._intention_node, [self._int_inhibition_weight])
+
+        if (not self._reactivating):
+            DynamicField.connect(intention_inhibition_node, self._intention_node, [self._int_inhibition_weight])
+
 
     def step(self):
         connectables = [self._intention_node,

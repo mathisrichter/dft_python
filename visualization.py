@@ -60,22 +60,28 @@ class TimerController(HasTraits):
         self._gripper_right_cos_field_plotdata = ArrayPlotData(x = x_axis, y = self.arch._gripper_right_cos_field.get_activation())
         self._gripper_right_cos_field_plot = Plot(self._gripper_right_cos_field_plotdata)
         self._gripper_right_cos_field_plot.title = 'gripper right cos'
-        self._gripper_right_cos_field_plot.plot(("x","y"), type = "line", color = "blue")
+        self._gripper_right_cos_field_plot.plot(("x","y"), name='gripper_right_cos', type = "line", color = "blue")
+        range_self = self._gripper_right_cos_field_plot.plots['gripper_right_cos'][0].value_mapper.range
+        range_self.high = color_range_max_value
+        range_self.low = -color_range_max_value
 
-        x_axis = numpy.array(range(self.arch._gripper_left_cos_field.get_output_dimension_sizes()[0]))
-        self._gripper_left_cos_field_plotdata = ArrayPlotData(x = x_axis, y = self.arch._gripper_left_cos_field.get_activation())
-        self._gripper_left_cos_field_plot = Plot(self._gripper_left_cos_field_plotdata)
-        self._gripper_left_cos_field_plot.title = 'gripper left cos'
-        self._gripper_left_cos_field_plot.plot(("x","y"), type = "line", color = "blue")
+        x_axis = numpy.array(range(self.arch._gripper_right_intention_field.get_output_dimension_sizes()[0]))
+        self._gripper_right_intention_field_plotdata = ArrayPlotData(x = x_axis, y = self.arch._gripper_right_intention_field.get_activation())
+        self._gripper_right_intention_field_plot = Plot(self._gripper_right_intention_field_plotdata)
+        self._gripper_right_intention_field_plot.title = 'gripper left cos'
+        self._gripper_right_intention_field_plot.plot(("x","y"), name='gripper_left_cos', type = "line", color = "blue")
+        range_self = self._gripper_right_intention_field_plot.plots['gripper_left_cos'][0].value_mapper.range
+        range_self.high = color_range_max_value
+        range_self.low = -color_range_max_value
 
         self._camera_field_plotdata = ArrayPlotData()
-        self._camera_field_plotdata.set_data('imagedata', self.arch._camera_field.get_activation().max(2).transpose())
+        self._camera_field_plotdata.set_data('imagedata', self.arch._camera_field.get_activation().max(1).transpose())
         self._camera_field_plot = Plot(self._camera_field_plotdata)
         self._camera_field_plot.title = 'camera'
         self._camera_field_plot.img_plot('imagedata',
                                   name='camera_field',
                                   xbounds=(0, self.arch._camera_field_sizes[0]-1),
-                                  ybounds=(0, self.arch._camera_field_sizes[1]-1),
+                                  ybounds=(0, self.arch._camera_field_sizes[2]-1),
                                   colormap=jet,
                                   )
         range_self = self._camera_field_plot.plots['camera_field'][0].value_mapper.range
@@ -83,13 +89,13 @@ class TimerController(HasTraits):
         range_self.low = -color_range_max_value
 
         self._color_space_field_plotdata = ArrayPlotData()
-        self._color_space_field_plotdata.set_data('imagedata', self.arch._color_space_field.get_activation().max(2).transpose())
+        self._color_space_field_plotdata.set_data('imagedata', self.arch._color_space_field.get_activation().max(1).transpose())
         self._color_space_field_plot = Plot(self._color_space_field_plotdata)
         self._color_space_field_plot.title = 'color space'
         self._color_space_field_plot.img_plot('imagedata',
                                   name='color_space_field',
                                   xbounds=(0, self.arch._color_space_field_sizes[0]-1),
-                                  ybounds=(0, self.arch._color_space_field_sizes[1]-1),
+                                  ybounds=(0, self.arch._color_space_field_sizes[2]-1),
                                   colormap=jet,
                                   )
         range_self = self._color_space_field_plot.plots['color_space_field'][0].value_mapper.range
@@ -187,7 +193,7 @@ class TimerController(HasTraits):
         self._hcontainer_bottom.add(self._color_space_field_plot)
         self._hcontainer_bottom.add(self._spatial_target_field_plot)
         self._hcontainer_bottom.add(self._move_head_intention_field_plot)
-        self._hcontainer_bottom.add(self._gripper_left_cos_field_plot)
+        self._hcontainer_bottom.add(self._gripper_right_intention_field_plot)
 
         self._hcontainer_top.add(self._color_space_ee_field_plot)
         self._hcontainer_top.add(self._visual_servoing_right_intention_field_plot)
@@ -201,8 +207,8 @@ class TimerController(HasTraits):
     def onTimer(self, *args):
         self.arch.step()
 
-        self._camera_field_plotdata.set_data('imagedata', self.arch._camera_field.get_activation().max(2).transpose())
-        self._color_space_field_plotdata.set_data('imagedata', self.arch._color_space_field.get_activation().max(2).transpose())
+        self._camera_field_plotdata.set_data('imagedata', self.arch._camera_field.get_activation().max(1).transpose())
+        self._color_space_field_plotdata.set_data('imagedata', self.arch._color_space_field.get_activation().max(1).transpose())
         self._color_space_ee_field_plotdata.set_data('imagedata', self.arch._color_space_ee_field.get_activation().max(2).transpose())
         self._spatial_target_field_plotdata.set_data('imagedata', self.arch._spatial_target_field.get_activation().transpose())
         self._move_head_intention_field_plotdata.set_data('imagedata', self.arch._move_head.get_intention_field().get_activation().transpose())
@@ -210,7 +216,7 @@ class TimerController(HasTraits):
         self._visual_servoing_right_intention_field_plotdata.set_data('imagedata', self.arch._visual_servoing_right.get_intention_field().get_activation().transpose())
         self._visual_servoing_cos_field_plotdata.set_data('imagedata', self.arch._visual_servoing_right.get_cos_field().get_activation().transpose())
         self._gripper_right_cos_field_plotdata.set_data('y', self.arch._gripper_right_cos_field.get_activation())
-        self._gripper_left_cos_field_plotdata.set_data('y', self.arch._gripper_left_cos_field.get_activation())
+        self._gripper_right_intention_field_plotdata.set_data('y', self.arch._gripper_right_intention_field.get_activation())
 
         self._camera_field_plot.request_redraw()
         self._color_space_field_plot.request_redraw()
@@ -221,7 +227,7 @@ class TimerController(HasTraits):
         self._visual_servoing_right_intention_field_plot.request_redraw()
         self._visual_servoing_cos_field_plot.request_redraw()
         self._gripper_right_cos_field_plot.request_redraw()
-        self._gripper_left_cos_field_plot.request_redraw()
+        self._gripper_right_intention_field_plot.request_redraw()
 
         return
 
