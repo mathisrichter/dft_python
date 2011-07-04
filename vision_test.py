@@ -5,7 +5,7 @@ import math_tools
 import matplotlib.pyplot as plt
 
 def main():
-    vision_proxy = ALProxy("ALVideoDevice", "192.168.0.102", 9559)
+    vision_proxy = ALProxy("ALVideoDevice", "nao.ini.rub.de", 9559)
     gvm_name = "nao vision"
     gvm_name = vision_proxy.subscribe(gvm_name, 0, 12, 15)
     # switch off auto white balance

@@ -14,7 +14,7 @@ class NaoHeadSensorField(DynamicField.DynamicField):
         # 2: nao space (origin in feet, x is front, y is left, z is up)
         self._robot_space_id = 2
         self._camera_id = camera_id
-        self._motion_proxy = ALProxy("ALMotion", "192.168.0.102", 9559)
+        self._motion_proxy = ALProxy("ALMotion", "nao.ini.rub.de", 9559)
         self._name = "nao_head_sensor"
         self._use_robot_sensors = use_robot_sensors
         self._min_x = 0.0
@@ -54,7 +54,7 @@ class NaoHeadSensorField(DynamicField.DynamicField):
 
         # get the current height of the objects in torso space
         # the objects are at a height of 0.35 m
-        cam_z = cam_z - 0.35
+        cam_z = cam_z - 0.375
 
         # compute the x,y coordinates of where the end effector should go (in
         # torso space)

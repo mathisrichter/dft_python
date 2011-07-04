@@ -2,7 +2,7 @@ import HeadSensorField
 import time
 from naoqi import ALProxy
 
-proxy = ALProxy("ALMotion", "192.168.0.102", 9559)
+proxy = ALProxy("ALMotion", "nao.ini.rub.de", 9559)
 #proxy.setStiffnesses("Head", 0.0)
 proxy.setStiffnesses("RArm", 0.0)
 

@@ -27,7 +27,7 @@ class NaoGripperControlRight(DynamicField.Connectable):
 
 
         # naoqi proxy to talk to the motion module
-        self._motion_proxy = ALProxy("ALMotion", "192.168.0.102", 9559)
+        self._motion_proxy = ALProxy("ALMotion", "nao.ini.rub.de", 9559)
         # set the stiffness of the hand to 1.0, so it will move
         self._motion_proxy.setStiffnesses("RHand", 1.0)
 
@@ -87,7 +87,7 @@ class NaoGripperControlLeft(DynamicField.Connectable):
 
 
         # naoqi proxy to talk to the motion module
-        self._motion_proxy = ALProxy("ALMotion", "192.168.0.102", 9559)
+        self._motion_proxy = ALProxy("ALMotion", "nao.ini.rub.de", 9559)
         # set the stiffness of the hand to 1.0, so it will move
         self._motion_proxy.setStiffnesses("LHand", 1.0)
 

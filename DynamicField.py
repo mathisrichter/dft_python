@@ -226,7 +226,7 @@ class Connectable:
 class DynamicField(Connectable):
     "Dynamic field"
 
-    def __init__(self, dimension_bounds=[], dimension_resolutions=[], interaction_kernels=None):
+    def __init__(self, dimension_bounds=[], dimension_resolutions=[], interaction_kernels=None, name=""):
         "Constructor"
         Connectable.__init__(self)
 
@@ -234,7 +234,10 @@ class DynamicField(Connectable):
         random.seed()
 
         # name of the field
-        self._name = "field" + str(self._id)
+        if (name == ""):
+            self._name = "field" + str(self._id)
+        else:
+            self._name = name
 
         # pair of bounds for each dimension (e.g., (-5,15) [mm])
         self._dimension_bounds = dimension_bounds
@@ -297,10 +300,10 @@ class DynamicField(Connectable):
         self.set_initial_activation(self._resting_level)
  
         # controls how fast the system relaxes
-        self._relaxation_time = 3.0
+        self._relaxation_time = 5.0
         # controls the steepness of the sigmoid (nonlinearity) at the zero
         # crossing
-        self._sigmoid_steepness = 600.0
+        self._sigmoid_steepness = 1200.0
         # controls the shift of the nonlinearity on the x-axis (sigmoid)
         self._sigmoid_shift = 0.0
 
@@ -314,6 +317,10 @@ class DynamicField(Connectable):
         # file handle for the activation log
         self._activation_log_file = None
 
+        # TODO only for experiments
+        self.start_activation_log()
+        # end TODO
+
     def __del__(self):
         self.stop_activation_log()
 
@@ -321,7 +328,11 @@ class DynamicField(Connectable):
         return self._name
 
     def set_name(self, name):
+        # TODO only for experiments
+        self.stop_activation_log()
         self._name = name
+        self.start_activation_log()
+        # end TODO
 
     def get_dimensionality(self):
         return self._output_dimensionality
@@ -489,7 +500,7 @@ class DynamicField(Connectable):
             # .. set the name of the field as the filename, but replace spaces
             # with underscores.
             file_name = self._name.replace(" ", "_")
-            file_name = "snapshots/" + file_name + ".txt"
+            file_name = "logs/" + file_name + ".txt"
 
         self._activation_log_file = open(file_name, 'a')
 
@@ -502,7 +513,14 @@ class DynamicField(Connectable):
     def write_activation_log(self):
         "Writes the current activation of the field to file."
         if self._activation_log_file != None:
-            self._activation.tofile(self._activation_log_file, sep=', ')
+
+            tmp = numpy.array([-1])
+            if (self._input_dimensionality == 0):
+                if (self._output_buffer[0] > 0.5):
+                    tmp[0] = 1
+
+#            self._activation.tofile(self._activation_log_file, sep=', ')
+            tmp.tofile(self._activation_log_file, sep=', ')
             self._activation_log_file.write('\n')
 
     def new_input(self):

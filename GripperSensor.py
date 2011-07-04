@@ -11,7 +11,7 @@ class NaoGripperSensorRight(DynamicField.DynamicField):
         "Constructor"
         DynamicField.DynamicField.__init__(self, dimension_bounds = [[gripper_field_size]])
 
-        self._motion_proxy = ALProxy("ALMotion", "192.168.0.102", 9559)
+        self._motion_proxy = ALProxy("ALMotion", "nao.ini.rub.de", 9559)
         self._name = "nao_gripper_sensor_right"
         self._use_robot_sensors = use_robot_sensors
 
@@ -35,7 +35,7 @@ class NaoGripperSensorLeft(DynamicField.DynamicField):
         "Constructor"
         DynamicField.DynamicField.__init__(self, dimension_bounds = [[gripper_field_size]])
 
-        self._motion_proxy = ALProxy("ALMotion", "192.168.0.102", 9559)
+        self._motion_proxy = ALProxy("ALMotion", "nao.ini.rub.de", 9559)
         self._name = "nao_gripper_sensor_left"
         self._use_robot_sensors = use_robot_sensors
 

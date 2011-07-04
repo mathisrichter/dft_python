@@ -20,7 +20,7 @@ def main():
     print_output = False
     move_nao = True
 
-    motion_proxy = ALProxy("ALMotion", "192.168.0.102", 9559)
+    motion_proxy = ALProxy("ALMotion", "nao.ini.rub.de", 9559)
     initial_x = 0.05
     initial_y = -0.10
     initial_z = 0.0

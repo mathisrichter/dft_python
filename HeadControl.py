@@ -8,7 +8,7 @@ import math
 class HeadControl(DynamicField.Connectable):
     "Head control"
 
-    def __init__(self, input_dimension_sizes, head_speed_fraction = 0.2, head_time_scale = 0.005, use_robot_sensors = False):
+    def __init__(self, input_dimension_sizes, head_speed_fraction = 0.2, head_time_scale = 0.01, use_robot_sensors = False):
         "Constructor"
         DynamicField.Connectable.__init__(self)
         self._head_speed_fraction = head_speed_fraction
@@ -18,7 +18,7 @@ class HeadControl(DynamicField.Connectable):
         self._head_time_scale = head_time_scale
 
         # naoqi proxy to talk to the motion module
-        self._motion_proxy = ALProxy("ALMotion", "192.168.0.102", 9559)
+        self._motion_proxy = ALProxy("ALMotion", "nao.ini.rub.de", 9559)
         # set the stiffness of the head to 1.0, so it will move
         self._motion_proxy.setStiffnesses("Head", 1.0)
 

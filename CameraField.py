@@ -11,7 +11,7 @@ class NaoCameraField(DynamicField.DynamicField):
         "Constructor"
         DynamicField.DynamicField.__init__(self, dimension_bounds = [[40],[30],[15]])
 
-        self._vision_proxy = ALProxy("ALVideoDevice", "192.168.0.102", 9559)
+        self._vision_proxy = ALProxy("ALVideoDevice", "nao.ini.rub.de", 9559)
         self._gvm_name = "nao vision"
         self._gvm_name = self._vision_proxy.subscribe(self._gvm_name, 0, 12, 30)
         # switch off auto white balance
@@ -45,6 +45,10 @@ class NaoCameraField(DynamicField.DynamicField):
                 color = hue[i][j]
                 self._activation[i][j] = -max_activation_level
                 self._activation[i][j][color] = saturation[i][j]
+        self._activation[0,:,:] = -max_activation_level
+        self._activation[sizes[0]-1,:,:] = -max_activation_level
+        self._activation[:,0,:] = -max_activation_level
+        self._activation[:,sizes[1]-1,:] = -max_activation_level
 
         self._output_buffer = self.compute_thresholded_activation(self._activation)
 

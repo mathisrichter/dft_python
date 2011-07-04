@@ -5,7 +5,7 @@ import numpy
 from naoqi import ALProxy
 import DynamicField
 
-proxy = ALProxy("ALMotion", "192.168.0.102", 9559)
+proxy = ALProxy("ALMotion", "nao.ini.rub.de", 9559)
 proxy.setStiffnesses("RArm", 1.0)
 speed_fraction = 0.5
 

@@ -8,14 +8,14 @@ import math
 class HeightOrientationRight(DynamicField.Connectable):
     "Control of height and orientation of the right end effector"
 
-    def __init__(self, end_effector_speed_fraction = 0.5, use_robot_sensors = True):
+    def __init__(self, end_effector_speed_fraction = 0.3, use_robot_sensors = True):
         "Constructor"
         DynamicField.Connectable.__init__(self)
         self._end_effector_speed_fraction = end_effector_speed_fraction
         self._use_robot_sensors = use_robot_sensors
 
         # naoqi proxy to talk to the motion module
-        self._motion_proxy = ALProxy("ALMotion", "192.168.0.102", 9559)
+        self._motion_proxy = ALProxy("ALMotion", "nao.ini.rub.de", 9559)
         # set the stiffness of the arm to 1.0, so it will move
         self._motion_proxy.setStiffnesses("RArm", 1.0)
 
@@ -34,7 +34,7 @@ class HeightOrientationRight(DynamicField.Connectable):
         return self._intention_node
 
     def _get_change(self, current_value, attractor_value):
-        return self._intention_node.get_output()[0] * (0.1 * (-1 * current_value + attractor_value))
+        return self._intention_node.get_output()[0] * (0.3 * (-1 * current_value + attractor_value))
 
     def _step_computation(self):
         self._intention_node.step()
@@ -53,22 +53,22 @@ class HeightOrientationRight(DynamicField.Connectable):
         end_effector_change_z = [0.0, 0.0, z_dot, 0.0, 0.0, 0.0]
         end_effector_change_alpha = [0.0, 0.0, 0.0, alpha_dot, 0.0, 0.0]
 
-#        print("ee change: ", end_effector_change)
+        print("height orient right change: z:", end_effector_change_z, ", alpha:", end_effector_change_alpha)
 
-        self._motion_proxy.changePosition("RArm", 2, end_effector_change_z, self._end_effector_speed_fraction, 4)
-        self._motion_proxy.changePosition("RArm", 2, end_effector_change_alpha, self._end_effector_speed_fraction, 8)
+#        self._motion_proxy.changePosition("RArm", 2, end_effector_change_z, self._end_effector_speed_fraction, 4)
+#        self._motion_proxy.changePosition("RArm", 2, end_effector_change_alpha, self._end_effector_speed_fraction, 8)
 
 class HeightOrientationLeft(DynamicField.Connectable):
     "Control of height and orientation of the left end effector"
 
-    def __init__(self, end_effector_speed_fraction = 0.5, use_robot_sensors = True):
+    def __init__(self, end_effector_speed_fraction = 0.3, use_robot_sensors = True):
         "Constructor"
         DynamicField.Connectable.__init__(self)
         self._end_effector_speed_fraction = end_effector_speed_fraction
         self._use_robot_sensors = use_robot_sensors
 
         # naoqi proxy to talk to the motion module
-        self._motion_proxy = ALProxy("ALMotion", "192.168.0.102", 9559)
+        self._motion_proxy = ALProxy("ALMotion", "nao.ini.rub.de", 9559)
         # set the stiffness of the arm to 1.0, so it will move
         self._motion_proxy.setStiffnesses("LArm", 1.0)
 
@@ -87,7 +87,7 @@ class HeightOrientationLeft(DynamicField.Connectable):
         return self._intention_node
 
     def _get_change(self, current_value, attractor_value):
-        return self._intention_node.get_output()[0] * (0.1 * (-1 * current_value + attractor_value))
+        return self._intention_node.get_output()[0] * (0.3 * (-1 * current_value + attractor_value))
 
     def _step_computation(self):
         self._intention_node.step()
@@ -96,26 +96,26 @@ class HeightOrientationLeft(DynamicField.Connectable):
         current_z = current_pos[2]
         current_alpha = current_pos[3]
 
-        print("current z: ", current_z)
-        print("current alpha: ", current_z)
+#        print("current z: ", current_z)
+#        print("current alpha: ", current_z)
         z_dot = self._get_change(current_z, self._target_z)
         alpha_dot = self._get_change(current_alpha, self._target_alpha)
-        print("z dot: ", z_dot)
-        print("alpha dot: ", alpha_dot)
+#        print("z dot: ", z_dot)
+#        print("alpha dot: ", alpha_dot)
 
         end_effector_change_z = [0.0, 0.0, z_dot, 0.0, 0.0, 0.0]
         end_effector_change_alpha = [0.0, 0.0, 0.0, alpha_dot, 0.0, 0.0]
 
-#        print("ee change: ", end_effector_change)
+        print("height orient left change: z:", end_effector_change_z, ", alpha:", end_effector_change_alpha)
 
-        self._motion_proxy.changePosition("LArm", 2, end_effector_change_z, self._end_effector_speed_fraction, 4)
-        self._motion_proxy.changePosition("LArm", 2, end_effector_change_alpha, self._end_effector_speed_fraction, 8)
+#        self._motion_proxy.changePosition("LArm", 2, end_effector_change_z, self._end_effector_speed_fraction, 4)
+#        self._motion_proxy.changePosition("LArm", 2, end_effector_change_alpha, self._end_effector_speed_fraction, 8)
 
 
 class PlaneVisualRight(DynamicField.Connectable):
     "Visual servoing of the right end effector"
 
-    def __init__(self, input_dimension_sizes, end_effector_speed_fraction = 0.2, use_robot_sensors = True):
+    def __init__(self, input_dimension_sizes, end_effector_speed_fraction = 0.05, use_robot_sensors = True):
         "Constructor"
         DynamicField.Connectable.__init__(self)
         self._end_effector_speed_fraction = end_effector_speed_fraction
@@ -124,7 +124,7 @@ class PlaneVisualRight(DynamicField.Connectable):
         self._input_dimension_sizes = input_dimension_sizes
 
         # naoqi proxy to talk to the motion module
-        self._motion_proxy = ALProxy("ALMotion", "192.168.0.102", 9559)
+        self._motion_proxy = ALProxy("ALMotion", "nao.ini.rub.de", 9559)
         # set the stiffness of the arm to 1.0, so it will move
         self._motion_proxy.setStiffnesses("RArm", 1.0)
 
@@ -148,13 +148,14 @@ class PlaneVisualRight(DynamicField.Connectable):
 #        print("x output: ", int_field_output_x)
 #        print("y output: ", int_field_output_y)
 
-        x_dot = numpy.dot(int_field_output_x, ramp_x) / -1000.0
-        y_dot = numpy.dot(int_field_output_y, ramp_y) /  1000.0
+        x_dot = numpy.dot(int_field_output_x, ramp_x) / -4000.0
+        y_dot = numpy.dot(int_field_output_y, ramp_y) /  4000.0
 
 #        print("x dot: ", x_dot)
 #        print("y dot: ", y_dot)
 
         end_effector_change = [x_dot, y_dot, 0.0, 0.0, 0.0, 0.0]
+        print("plane visual right change: ", end_effector_change)
 
         self._motion_proxy.changePosition("RArm", 2, end_effector_change, self._end_effector_speed_fraction, 3)
 
@@ -162,7 +163,7 @@ class PlaneVisualRight(DynamicField.Connectable):
 class PlaneVisualLeft(DynamicField.Connectable):
     "Visual servoing of the left end effector"
 
-    def __init__(self, input_dimension_sizes, end_effector_speed_fraction = 0.2, use_robot_sensors = True):
+    def __init__(self, input_dimension_sizes, end_effector_speed_fraction = 0.05, use_robot_sensors = True):
         "Constructor"
         DynamicField.Connectable.__init__(self)
         self._end_effector_speed_fraction = end_effector_speed_fraction
@@ -171,7 +172,7 @@ class PlaneVisualLeft(DynamicField.Connectable):
         self._input_dimension_sizes = input_dimension_sizes
 
         # naoqi proxy to talk to the motion module
-        self._motion_proxy = ALProxy("ALMotion", "192.168.0.102", 9559)
+        self._motion_proxy = ALProxy("ALMotion", "nao.ini.rub.de", 9559)
         # set the stiffness of the arm to 1.0, so it will move
         self._motion_proxy.setStiffnesses("LArm", 1.0)
 
@@ -195,13 +196,14 @@ class PlaneVisualLeft(DynamicField.Connectable):
 #        print("x output: ", int_field_output_x)
 #        print("y output: ", int_field_output_y)
 
-        x_dot = numpy.dot(int_field_output_x, ramp_x) / -1000.0
-        y_dot = numpy.dot(int_field_output_y, ramp_y) /  1000.0
+        x_dot = numpy.dot(int_field_output_x, ramp_x) / -4000.0
+        y_dot = numpy.dot(int_field_output_y, ramp_y) /  4000.0
 
 #        print("x dot: ", x_dot)
 #        print("y dot: ", y_dot)
 
         end_effector_change = [x_dot, y_dot, 0.0, 0.0, 0.0, 0.0]
+        print("plane visual left change: ", end_effector_change)
 
         self._motion_proxy.changePosition("LArm", 2, end_effector_change, self._end_effector_speed_fraction, 3)
 
@@ -221,7 +223,7 @@ class PlaneRight(DynamicField.Connectable):
         self._file = open("right_ee_pos_0.dat", 'w')
 
         # naoqi proxy to talk to the motion module
-        self._motion_proxy = ALProxy("ALMotion", "192.168.0.102", 9559)
+        self._motion_proxy = ALProxy("ALMotion", "nao.ini.rub.de", 9559)
         # set the stiffness of the arm to 1.0, so it will move
         self._motion_proxy.setStiffnesses("RArm", 1.0)
 
@@ -231,14 +233,17 @@ class PlaneRight(DynamicField.Connectable):
         self._end_effector_x = DynamicField.DynamicField([], [], None)
         self._end_effector_x.set_resting_level(0.)
         self._end_effector_x.set_noise_strength(0.0)
-        self._end_effector_x.set_relaxation_time(50.)
+        self._end_effector_x.set_relaxation_time(20.0)
         self._end_effector_x.set_boost(current_pos[0])
 
         self._end_effector_y = DynamicField.DynamicField([], [], None)
         self._end_effector_y.set_resting_level(0.)
         self._end_effector_y.set_noise_strength(0.0)
-        self._end_effector_y.set_relaxation_time(50.)
+        self._end_effector_y.set_relaxation_time(20.0)
         self._end_effector_y.set_boost(current_pos[1])
+
+        # TODO hack to restrict movement when no peak is in the target field
+        self.movement_strength = 0.0
 
 
     def __del__(self):
@@ -252,18 +257,13 @@ class PlaneRight(DynamicField.Connectable):
         int_field_output = self.get_incoming_connectables()[0].get_output()
         int_field_output_x = int_field_output.max(0)
         int_field_output_y = int_field_output.max(1)
-#        print("int field output: ", str(int_field_output))
-
-#        height_int_field_output = self.get_incoming_connectables()[1].get_output()
-#        self._end_effector_z.set_normalization_factor(height_int_field_output.sum())
-#        field_length_z = len(height_int_field_output)
-
-#        height_ramp = numpy.linspace(0.0, 
-
 
         # set the normalization factor of the end effector nodes
         self._end_effector_x.set_normalization_factor(int_field_output_x.sum())
         self._end_effector_y.set_normalization_factor(int_field_output_y.sum())
+
+        print("normalization factor x: ", self._end_effector_x.get_normalization_factor())
+        print("normalization factor y: ", self._end_effector_y.get_normalization_factor())
 
         # compute ramps for x and y direction
         field_length_x = len(int_field_output_x)
@@ -277,15 +277,15 @@ class PlaneRight(DynamicField.Connectable):
         ramp_x = numpy.linspace(min_x, max_x , field_length_x)
         ramp_y = numpy.linspace(min_y, max_y, field_length_y)
 
-#        print("ramp x: ", str(ramp_x))
-#        print("ramp y: ", str(ramp_y))
+        print("ramp x: ", str(ramp_x))
+        print("ramp y: ", str(ramp_y))
 
         # get the force values for x,y towards the peak.
-        end_effector_x_boost = numpy.dot(int_field_output_x, ramp_x)
-        end_effector_y_boost = numpy.dot(int_field_output_y, ramp_y)
+        end_effector_x_boost = self.movement_strength * numpy.dot(int_field_output_x, ramp_x)
+        end_effector_y_boost = self.movement_strength * numpy.dot(int_field_output_y, ramp_y)
 
-#        print("boost x: ", str(end_effector_x_boost))
-#        print("boost y: ", str(end_effector_y_boost))
+        print("boost x: ", str(end_effector_x_boost))
+        print("boost y: ", str(end_effector_y_boost))
 
         current_pos = self._motion_proxy.getPosition("RArm", 2, True)
         current_x = current_pos[0]
@@ -298,22 +298,10 @@ class PlaneRight(DynamicField.Connectable):
         x_dot = self._end_effector_x.get_change(current_x)[0]
         y_dot = self._end_effector_y.get_change(current_y)[0]
 
-#        if (x_dot is None):
-#            print("x dot is none")
-#        if (y_dot is None):
-#            print("y dot is none")
-#        print("current ee x: ", str(current_x))
-#        print("current ee y: ", str(current_y))
-#        print("current ee z: ", str(current_z))
-
-#        print("x dot: ", str(x_dot))
-#        print("y dot: ", str(y_dot))
-#        print("z dot: ", str(z_dot))
-
         # compute the change values for x,y of the end_effector
-        end_effector_change = [x_dot, y_dot, 0.0, 0.0, 0., 0.]
+        end_effector_change = [x_dot, y_dot, 0.0, 0.0, 0., 0.0]
 
-#        print("ee change: ", end_effector_change)
+        print("plane right change: ", end_effector_change)
 
         # move the arm towards the peak
         # (the last parameter is the axis mask and determines, what should be
@@ -337,7 +325,7 @@ class PlaneLeft(DynamicField.Connectable):
         self._file = open("left_ee_pos_0.dat", 'w')
 
         # naoqi proxy to talk to the motion module
-        self._motion_proxy = ALProxy("ALMotion", "192.168.0.102", 9559)
+        self._motion_proxy = ALProxy("ALMotion", "nao.ini.rub.de", 9559)
         # set the stiffness of the arm to 1.0, so it will move
         self._motion_proxy.setStiffnesses("LArm", 1.0)
 
@@ -347,13 +335,13 @@ class PlaneLeft(DynamicField.Connectable):
         self._end_effector_x = DynamicField.DynamicField([], [], None)
         self._end_effector_x.set_resting_level(0.)
         self._end_effector_x.set_noise_strength(0.0)
-        self._end_effector_x.set_relaxation_time(50.)
+        self._end_effector_x.set_relaxation_time(20.0)
         self._end_effector_x.set_boost(current_pos[0])
 
         self._end_effector_y = DynamicField.DynamicField([], [], None)
         self._end_effector_y.set_resting_level(0.)
         self._end_effector_y.set_noise_strength(0.0)
-        self._end_effector_y.set_relaxation_time(50.)
+        self._end_effector_y.set_relaxation_time(20.0)
         self._end_effector_y.set_boost(current_pos[1])
 
 
@@ -426,15 +414,15 @@ class PlaneLeft(DynamicField.Connectable):
 #        print("y dot: ", str(y_dot))
 #        print("z dot: ", str(z_dot))
 
-        end_effector_change_x = [x_dot, y_dot, 0.0, 0.0, 0.0, 0.0]
+        end_effector_change = [x_dot, y_dot, 0.0, 0.0, 0.0, 0.0]
 
-#        print("ee change: ", end_effector_change)
+        print("plane left change: ", end_effector_change)
 
         # move the arm towards the peak
         # (the last parameter is the axis mask and determines, what should be
         # controlled: 7 for position only, 56 for orientation only, and 63
         # for position and orientation
-        self._motion_proxy.changePosition("LArm", 2, end_effector_change_x, self._end_effector_speed_fraction, 3)
+        self._motion_proxy.changePosition("LArm", 2, end_effector_change, self._end_effector_speed_fraction, 3)
 
 
 
