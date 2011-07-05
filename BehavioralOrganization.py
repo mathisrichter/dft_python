@@ -51,7 +51,8 @@ class GraspArchitecture():
 
         # create elementary behavior: find color ee marker
         self._find_color_ee_field_size = 15
-        find_color_ee_int_weight = math_tools.gauss_1d(self._find_color_ee_field_size, amplitude=10.0, sigma=0.5, shift=8.0)
+        # shift 8.0
+        find_color_ee_int_weight = math_tools.gauss_1d(self._find_color_ee_field_size, amplitude=10.0, sigma=1.0, shift=7.5)
 
         self._find_color_ee = ElementaryBehavior.with_internal_fields(field_dimensionality=1,
                                                     field_sizes=[[self._find_color_ee_field_size]],
@@ -206,7 +207,7 @@ class GraspArchitecture():
         self.fields.append(self._visual_servoing_cos_field)
 
         # create elementary behavior: move arm
-        visual_servoing_right_int_weight = numpy.ones(self._visual_servoing_field_sizes) * 2.0
+        visual_servoing_right_int_weight = numpy.ones(self._visual_servoing_field_sizes) * 4.0
 
         self._visual_servoing_right = ElementaryBehavior(intention_field=self._visual_servoing_right_intention_field,
                                              cos_field=self._visual_servoing_cos_field,
@@ -238,7 +239,7 @@ class GraspArchitecture():
         self.fields.append(self._visual_servoing_left_intention_field)
 
         # create elementary behavior: move arm
-        visual_servoing_left_int_weight = numpy.ones(self._visual_servoing_field_sizes) * 2.0
+        visual_servoing_left_int_weight = numpy.ones(self._visual_servoing_field_sizes) * 4.0
 
         self._visual_servoing_left = ElementaryBehavior(intention_field=self._visual_servoing_left_intention_field,
                                              cos_field=self._visual_servoing_cos_field,
@@ -369,7 +370,7 @@ class GraspArchitecture():
 
         # create perception color-space field
         color_space_ee_field_dimensionality = 3
-        color_space_ee_kernel = Kernel.GaussKernel(2.0, [1.4] * color_space_ee_field_dimensionality)
+        color_space_ee_kernel = Kernel.GaussKernel(2.5, [1.4] * color_space_ee_field_dimensionality)
 
         self._color_space_ee_field_sizes = [self._move_head_field_sizes[0], self._move_head_field_sizes[1], self._find_color_ee_field_size]
         self._color_space_ee_field = DynamicField.DynamicField([[self._color_space_ee_field_sizes[0]],[self._color_space_ee_field_sizes[1]],[self._color_space_ee_field_sizes[2]]], [], [color_space_ee_kernel])
@@ -393,7 +394,7 @@ class GraspArchitecture():
 
 
         color_space_ee_to_visual_servoing_right_int_projection = DynamicField.Projection(color_space_ee_field_dimensionality, visual_servoing_field_dimensionality, set([0,1]), [0,1])
-        color_space_ee_to_visual_servoing_right_int_weight = DynamicField.Weight(4.5)
+        color_space_ee_to_visual_servoing_right_int_weight = DynamicField.Weight(4.0)
         DynamicField.connect(self._color_space_ee_field, self._visual_servoing_right.get_intention_field(), [color_space_ee_to_visual_servoing_right_int_weight, color_space_ee_to_visual_servoing_right_int_projection])
 
         color_space_ee_to_visual_servoing_right_cos_projection = DynamicField.Projection(color_space_ee_field_dimensionality, visual_servoing_field_dimensionality, set([0,1]), [0,1])
@@ -401,7 +402,7 @@ class GraspArchitecture():
         DynamicField.connect(self._color_space_ee_field, self._visual_servoing_right.get_cos_field(), [color_space_ee_to_visual_servoing_right_cos_weight, color_space_ee_to_visual_servoing_right_cos_projection])
 
         color_space_ee_to_visual_servoing_left_int_projection = DynamicField.Projection(color_space_ee_field_dimensionality, visual_servoing_field_dimensionality, set([0,1]), [0,1])
-        color_space_ee_to_visual_servoing_left_int_weight = DynamicField.Weight(4.5)
+        color_space_ee_to_visual_servoing_left_int_weight = DynamicField.Weight(4.0)
         DynamicField.connect(self._color_space_ee_field, self._visual_servoing_left.get_intention_field(), [color_space_ee_to_visual_servoing_left_int_weight, color_space_ee_to_visual_servoing_left_int_projection])
 
 
@@ -507,19 +508,8 @@ class GraspArchitecture():
         ###############################################################################################################
 
         # create end effector control connectable
-        self._end_effector_control_right = EndEffectorControl.PlaneRight(self._head_sensor_field, self._move_arm_field_sizes)
-        DynamicField.connect(self._move_right_arm.get_intention_field(), self._end_effector_control_right)
-        self._end_effector_control_left = EndEffectorControl.PlaneLeft(self._head_sensor_field, self._move_arm_field_sizes)
-        DynamicField.connect(self._move_left_arm.get_intention_field(), self._end_effector_control_left)
-
-        self._end_effector_control_height_orient_right = EndEffectorControl.HeightOrientationRight()
-        self._end_effector_control_height_orient_left = EndEffectorControl.HeightOrientationLeft()
-
-        self._end_effector_control_visual_right = EndEffectorControl.PlaneVisualRight(self._visual_servoing_field_sizes)
-        DynamicField.connect(self._visual_servoing_right.get_intention_field(), self._end_effector_control_visual_right)
-
-        self._end_effector_control_visual_left = EndEffectorControl.PlaneVisualLeft(self._visual_servoing_field_sizes)
-        DynamicField.connect(self._visual_servoing_left.get_intention_field(), self._end_effector_control_visual_left)
+        self._end_effector_control_right = EndEffectorControl.EndEffectorControlRight(self._head_sensor_field, self._move_right_arm.get_intention_field(), self._visual_servoing_right.get_intention_field(), self._move_arm_field_sizes)
+        self._end_effector_control_left = EndEffectorControl.EndEffectorControlLeft(self._head_sensor_field, self._move_left_arm.get_intention_field(), self._visual_servoing_left.get_intention_field(), self._move_arm_field_sizes)
 
 
         ###############################################################################################################
@@ -585,34 +575,34 @@ class GraspArchitecture():
         # right preconditions
         self._preconditions.append(precondition(self._side_right, self._gripper_right_open, self._task_node_grasp, name="grasp__side_right__gripper_right_open"))
         self._preconditions.append(precondition(self._side_right, self._move_right_arm, self._task_node_grasp, name="grasp__side_right__move_right_arm"))
-        self._preconditions.append(precondition(self._side_right, self._end_effector_control_height_orient_right.get_intention_node(), self._task_node_grasp, name="grasp__side_right__end_effector_control_height_orient_right"))
+        self._preconditions.append(precondition(self._side_right, self._end_effector_control_right.get_intention_node(), self._task_node_grasp, name="grasp__side_right__end_effector_control_right"))
         self._preconditions.append(precondition(self._side_right, self._visual_servoing_right, self._task_node_grasp, name="grasp__side_right__visual_servoing_right"))
         self._preconditions.append(precondition(self._side_right, self._gripper_right_close, self._task_node_grasp, name="grasp__side_right__gripper_right_close"))
 
         self._preconditions.append(precondition(self._move_head, self._gripper_right_open, self._task_node_grasp, name="grasp__move_head__gripper_right_open"))
         self._preconditions.append(precondition(self._move_head, self._move_right_arm, self._task_node_grasp, name="grasp__move_head__move_right_arm"))
-        self._preconditions.append(precondition(self._move_head, self._end_effector_control_height_orient_right.get_intention_node(), self._task_node_grasp, name="grasp__move_head__end_effector_control_height_orient_right"))
+        self._preconditions.append(precondition(self._move_head, self._end_effector_control_right.get_intention_node(), self._task_node_grasp, name="grasp__move_head__end_effector_control_right"))
         self._preconditions.append(precondition(self._move_head, self._gripper_right_close, self._task_node_grasp, name="grasp__move_head__gripper_right_close"))
 
         self._preconditions.append(precondition(self._gripper_right_open, self._move_right_arm, self._task_node_grasp, name="grasp__gripper_right_open__move_right_arm"))
-        self._preconditions.append(precondition(self._gripper_right_open, self._end_effector_control_height_orient_right.get_intention_node(), self._task_node_grasp, name="grasp__gripper_right_open__end_effector_control_height_orient_right"))
+        self._preconditions.append(precondition(self._gripper_right_open, self._end_effector_control_right.get_intention_node(), self._task_node_grasp, name="grasp__gripper_right_open__end_effector_control_right"))
         self._preconditions.append(precondition(self._move_right_arm, self._visual_servoing_right, self._task_node_grasp, name="grasp__move_right_arm__visual_servoing_right"))
         self._preconditions.append(precondition(self._visual_servoing_right, self._gripper_right_close, self._task_node_grasp, name="grasp__visual_servoing_right__gripper_right_close"))
 
         # left preconditions
         self._preconditions.append(precondition(self._side_left, self._gripper_left_open, self._task_node_grasp, name="grasp__side_left__gripper_left_open"))
         self._preconditions.append(precondition(self._side_left, self._move_left_arm, self._task_node_grasp, name="grasp__side_left__move_left_arm"))
-        self._preconditions.append(precondition(self._side_left, self._end_effector_control_height_orient_left.get_intention_node(), self._task_node_grasp, name="grasp__side_left__end_effector_control_height_orient_left"))
+        self._preconditions.append(precondition(self._side_left, self._end_effector_control_left.get_intention_node(), self._task_node_grasp, name="grasp__side_left__end_effector_control_left"))
         self._preconditions.append(precondition(self._side_left, self._visual_servoing_left, self._task_node_grasp, name="grasp__side_left__visual_servoing_left"))
         self._preconditions.append(precondition(self._side_left, self._gripper_left_close, self._task_node_grasp, name="grasp__side_left__gripper_left_close"))
 
         self._preconditions.append(precondition(self._move_head, self._gripper_left_open, self._task_node_grasp, name="grasp__move_head__gripper_left_open"))
         self._preconditions.append(precondition(self._move_head, self._move_left_arm, self._task_node_grasp, name="grasp__move_head__move_left_arm"))
-        self._preconditions.append(precondition(self._move_head, self._end_effector_control_height_orient_left.get_intention_node(), self._task_node_grasp, name="grasp__move_head__end_effector_control_height_orient_left"))
+        self._preconditions.append(precondition(self._move_head, self._end_effector_control_left.get_intention_node(), self._task_node_grasp, name="grasp__move_head__end_effector_control_left"))
         self._preconditions.append(precondition(self._move_head, self._gripper_left_close, self._task_node_grasp, name="grasp__move_head__gripper_left_close"))
 
         self._preconditions.append(precondition(self._gripper_left_open, self._move_left_arm, self._task_node_grasp, name="grasp__gripper_left_open__move_left_arm"))
-        self._preconditions.append(precondition(self._gripper_left_open, self._end_effector_control_height_orient_left.get_intention_node(), self._task_node_grasp, name="grasp__gripper_left_open__end_effector_control_height_orient_left"))
+        self._preconditions.append(precondition(self._gripper_left_open, self._end_effector_control_left.get_intention_node(), self._task_node_grasp, name="grasp__gripper_left_open__end_effector_control_left"))
         self._preconditions.append(precondition(self._move_left_arm, self._visual_servoing_left, self._task_node_grasp, name="grasp__move_left_arm__visual_servoing_left"))
         self._preconditions.append(precondition(self._visual_servoing_left, self._gripper_left_close, self._task_node_grasp, name="grasp__visual_servoing_left__gripper_left_close"))
 
@@ -627,34 +617,34 @@ class GraspArchitecture():
         # right preconditions
         self._preconditions.append(precondition(self._side_right, self._gripper_right_open, self._task_node_point, name="point__side_right__gripper_right_open"))
         self._preconditions.append(precondition(self._side_right, self._move_right_arm, self._task_node_point, name="point__side_right__move_right_arm"))
-        self._preconditions.append(precondition(self._side_right, self._end_effector_control_height_orient_right.get_intention_node(), self._task_node_point, name="point__side_right__end_effector_control_height_orient_right"))
+        self._preconditions.append(precondition(self._side_right, self._end_effector_control_right.get_intention_node(), self._task_node_point, name="point__side_right__end_effector_control_right"))
         self._preconditions.append(precondition(self._side_right, self._visual_servoing_right, self._task_node_point, name="point__side_right__visual_servoing_right"))
         self._preconditions.append(precondition(self._side_right, self._gripper_right_close, self._task_node_point, name="point__side_right__gripper_right_close"))
 
         self._preconditions.append(precondition(self._move_head, self._gripper_right_open, self._task_node_point, name="point__move_head__gripper_right_open"))
         self._preconditions.append(precondition(self._move_head, self._move_right_arm, self._task_node_point, name="point__move_head__move_right_arm"))
-        self._preconditions.append(precondition(self._move_head, self._end_effector_control_height_orient_right.get_intention_node(), self._task_node_point, name="point__move_head__end_effector_control_height_orient_right"))
+        self._preconditions.append(precondition(self._move_head, self._end_effector_control_right.get_intention_node(), self._task_node_point, name="point__move_head__end_effector_control_right"))
         self._preconditions.append(precondition(self._move_head, self._gripper_right_close, self._task_node_point, name="point__move_head__gripper_right_close"))
 
         self._preconditions.append(precondition(self._gripper_right_close, self._move_right_arm, self._task_node_point, name="point__gripper_right_close__move_right_arm"))
-        self._preconditions.append(precondition(self._gripper_right_close, self._end_effector_control_height_orient_right.get_intention_node(), self._task_node_point, name="point__gripper_right_close__end_effector_control_height_orient_right"))
+        self._preconditions.append(precondition(self._gripper_right_close, self._end_effector_control_right.get_intention_node(), self._task_node_point, name="point__gripper_right_close__end_effector_control_right"))
         self._preconditions.append(precondition(self._move_right_arm, self._visual_servoing_right, self._task_node_point, name="point__move_right_arm__visual_servoing_right"))
         self._preconditions.append(precondition(self._visual_servoing_right, self._gripper_right_open, self._task_node_point, name="point__visual_servoing_right__gripper_right_open"))
 
         # left preconditions
         self._preconditions.append(precondition(self._side_left, self._gripper_left_open, self._task_node_point, name="point__side_left__gripper_left_open"))
         self._preconditions.append(precondition(self._side_left, self._move_left_arm, self._task_node_point, name="point__side_left__move_left_arm"))
-        self._preconditions.append(precondition(self._side_left, self._end_effector_control_height_orient_left.get_intention_node(), self._task_node_point, name="point__side_left__end_effector_control_height_orient_left"))
+        self._preconditions.append(precondition(self._side_left, self._end_effector_control_left.get_intention_node(), self._task_node_point, name="point__side_left__end_effector_control_left"))
         self._preconditions.append(precondition(self._side_left, self._visual_servoing_left, self._task_node_point, name="point__side_left__visual_servoing_left"))
         self._preconditions.append(precondition(self._side_left, self._gripper_left_close, self._task_node_point, name="point__side_left__gripper_left_close"))
 
         self._preconditions.append(precondition(self._move_head, self._gripper_left_open, self._task_node_point, name="point__move_head__gripper_left_open"))
         self._preconditions.append(precondition(self._move_head, self._move_left_arm, self._task_node_point, name="point__move_head__move_left_arm"))
-        self._preconditions.append(precondition(self._move_head, self._end_effector_control_height_orient_left.get_intention_node(), self._task_node_point, name="point__move_head__end_effector_control_height_orient_left"))
+        self._preconditions.append(precondition(self._move_head, self._end_effector_control_left.get_intention_node(), self._task_node_point, name="point__move_head__end_effector_control_left"))
         self._preconditions.append(precondition(self._move_head, self._gripper_left_close, self._task_node_point, name="point__move_head__gripper_left_close"))
 
         self._preconditions.append(precondition(self._gripper_left_close, self._move_left_arm, self._task_node_point, name="point__gripper_left_close__move_left_arm"))
-        self._preconditions.append(precondition(self._gripper_left_close, self._end_effector_control_height_orient_left.get_intention_node(), self._task_node_point, name="point__gripper_left_close__end_effector_control_height_orient_left"))
+        self._preconditions.append(precondition(self._gripper_left_close, self._end_effector_control_left.get_intention_node(), self._task_node_point, name="point__gripper_left_close__end_effector_control_left"))
         self._preconditions.append(precondition(self._move_left_arm, self._visual_servoing_left, self._task_node_point, name="point__move_left_arm__visual_servoing_left"))
         self._preconditions.append(precondition(self._visual_servoing_left, self._gripper_left_open, self._task_node_point, name="point__visual_servoing_left__gripper_left_open"))
 
@@ -739,6 +729,8 @@ class GraspArchitecture():
 
         self._move_right_arm.step()
         self._move_left_arm.step()
+        self._visual_servoing_right.step()
+        self._visual_servoing_left.step()
 
         self._head_sensor_field.step()
         self._side_left.step()
@@ -747,18 +739,8 @@ class GraspArchitecture():
         self._gripper_sensor_right.step()
         self._gripper_sensor_left.step()
 
-        self._end_effector_control_right.movement_strength = self._move_right_arm.get_intention_node().get_output()
-        self._end_effector_control_left.movement_strength = self._move_left_arm.get_intention_node().get_output()
-
         self._end_effector_control_right.step()
         self._end_effector_control_left.step()
-        self._end_effector_control_visual_right.step()
-        self._end_effector_control_visual_left.step()
-        self._end_effector_control_height_orient_right.step()
-        self._end_effector_control_height_orient_left.step()
-
-        self._visual_servoing_right.step()
-        self._visual_servoing_left.step()
 
         for node in self._preconditions:
             node.step() 

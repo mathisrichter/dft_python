@@ -90,7 +90,7 @@ class TimerController(HasTraits):
         x_axis = numpy.array(range(self.arch._find_color_ee.get_intention_field().get_output_dimension_sizes()[0]))
         self._find_color_ee_intention_field_plotdata = ArrayPlotData(x = x_axis, y = self.arch._find_color_ee.get_intention_field().get_activation())
         self._find_color_ee_intention_field_plot = Plot(self._find_color_ee_intention_field_plotdata)
-        self._find_color_ee_intention_field_plot.title = 'find color int'
+        self._find_color_ee_intention_field_plot.title = 'find color ee int'
         self._find_color_ee_intention_field_plot.plot(("x","y"), name='find_color_ee_int', type = "line", color = "blue")
         range_self = self._find_color_ee_intention_field_plot.plots['find_color_ee_int'][0].value_mapper.range
         range_self.high = color_range_max_value
@@ -113,13 +113,13 @@ class TimerController(HasTraits):
 
         # color space red
         self._color_space_field_plotdata = ArrayPlotData()
-        self._color_space_field_plotdata.set_data('imagedata', self.arch._color_space_field.get_activation().max(2).transpose())
+        self._color_space_field_plotdata.set_data('imagedata', self.arch._color_space_field.get_activation().max(1).transpose())
         self._color_space_field_plot = Plot(self._color_space_field_plotdata)
         self._color_space_field_plot.title = 'color space'
         self._color_space_field_plot.img_plot('imagedata',
                                   name='color_space_field',
                                   xbounds=(0, self.arch._color_space_field_sizes[0]-1),
-                                  ybounds=(0, self.arch._color_space_field_sizes[1]-1),
+                                  ybounds=(0, self.arch._color_space_field_sizes[2]-1),
                                   colormap=jet,
                                   )
         range_self = self._color_space_field_plot.plots['color_space_field'][0].value_mapper.range
@@ -256,6 +256,7 @@ class TimerController(HasTraits):
         self._hcontainer_bottom.add(self._spatial_target_field_plot)
         self._hcontainer_bottom.add(self._move_head_intention_field_plot)
         self._hcontainer_bottom.add(self._move_right_arm_intention_field_plot)
+#        self._hcontainer_bottom.add(self._find_color_intention_field_plot)
 #        self._hcontainer_bottom.add(self._gripper_right_intention_field_plot)
 
         self._hcontainer_top.add(self._color_space_ee_field_plot)
@@ -272,7 +273,7 @@ class TimerController(HasTraits):
         self.arch.step()
 
         self._camera_field_plotdata.set_data('imagedata', self.arch._camera_field.get_activation().max(2).transpose())
-        self._color_space_field_plotdata.set_data('imagedata', self.arch._color_space_field.get_activation().max(2).transpose())
+        self._color_space_field_plotdata.set_data('imagedata', self.arch._color_space_field.get_activation().max(1).transpose())
         self._color_space_ee_field_plotdata.set_data('imagedata', self.arch._color_space_ee_field.get_activation().max(2).transpose())
         self._spatial_target_field_plotdata.set_data('imagedata', self.arch._spatial_target_field.get_activation().transpose())
         self._move_head_intention_field_plotdata.set_data('imagedata', self.arch._move_head.get_intention_field().get_activation().transpose())
