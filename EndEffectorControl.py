@@ -29,7 +29,7 @@ class EndEffectorControlRight(DynamicField.Connectable):
         self._motion_proxy.setStiffnesses("RArm", 1.0)
 
         # HEIGHT
-        self._target_z = 0.355
+        self._target_z = 0.35
         self._target_alpha = math.pi / 2.0
 
         self._intention_node = DynamicField.DynamicField([], [], None)
@@ -90,11 +90,11 @@ class EndEffectorControlRight(DynamicField.Connectable):
         vis_arm_field_length_x = len(vis_arm_field_output_x)
         vis_arm_field_length_y = len(vis_arm_field_output_y)
 
-        vis_arm_ramp_x = numpy.linspace(-1.0, 1.0, vis_arm_field_length_x)
+        vis_arm_ramp_x = numpy.linspace(-0.8, 1.2, vis_arm_field_length_x)
         vis_arm_ramp_y = numpy.linspace(-1.0, 1.0, vis_arm_field_length_y)
 
-        vis_arm_boost_x = numpy.dot(vis_arm_field_output_x, vis_arm_ramp_x) / -400.0
-        vis_arm_boost_y = numpy.dot(vis_arm_field_output_y, vis_arm_ramp_y) /  400.0
+        vis_arm_boost_x = numpy.dot(vis_arm_field_output_x, vis_arm_ramp_x) / -10.0
+        vis_arm_boost_y = numpy.dot(vis_arm_field_output_y, vis_arm_ramp_y) /  10.0
 
         print("boost x: ", str(vis_arm_boost_x))
         print("boost y: ", str(vis_arm_boost_y))
@@ -151,7 +151,7 @@ class EndEffectorControlLeft(DynamicField.Connectable):
         self._motion_proxy.setStiffnesses("LArm", 1.0)
 
         # HEIGHT
-        self._target_z = 0.355
+        self._target_z = 0.35
         self._target_alpha = -math.pi / 2.0
 
         self._intention_node = DynamicField.DynamicField([], [], None)
@@ -211,11 +211,11 @@ class EndEffectorControlLeft(DynamicField.Connectable):
         vis_arm_field_length_x = len(vis_arm_field_output_x)
         vis_arm_field_length_y = len(vis_arm_field_output_y)
 
-        vis_arm_ramp_x = numpy.linspace(-1.0, 1.0, vis_arm_field_length_x)
+        vis_arm_ramp_x = numpy.linspace(-0.8, 1.2, vis_arm_field_length_x)
         vis_arm_ramp_y = numpy.linspace(-1.0, 1.0, vis_arm_field_length_y)
 
-        vis_arm_boost_x = numpy.dot(vis_arm_field_output_x, vis_arm_ramp_x) / -400.0
-        vis_arm_boost_y = numpy.dot(vis_arm_field_output_y, vis_arm_ramp_y) /  400.0
+        vis_arm_boost_x = numpy.dot(vis_arm_field_output_x, vis_arm_ramp_x) / -10.0
+        vis_arm_boost_y = numpy.dot(vis_arm_field_output_y, vis_arm_ramp_y) /  10.0
 
 
         # STEP

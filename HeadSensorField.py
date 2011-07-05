@@ -54,7 +54,7 @@ class NaoHeadSensorField(DynamicField.DynamicField):
 
         # get the current height of the objects in torso space
         # the objects are at a height of 0.35 m
-        cam_z = cam_z - 0.375
+        cam_z = cam_z - 0.342
 
         # compute the x,y coordinates of where the end effector should go (in
         # torso space)

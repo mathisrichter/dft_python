@@ -514,13 +514,13 @@ class DynamicField(Connectable):
         "Writes the current activation of the field to file."
         if self._activation_log_file != None:
 
-            tmp = numpy.array([-1])
-            if (self._input_dimensionality == 0):
-                if (self._output_buffer[0] > 0.5):
-                    tmp[0] = 1
+#            tmp = numpy.array([-1])
+#            if (self._input_dimensionality == 0):
+#                if (self._output_buffer[0] > 0.5):
+#                    tmp[0] = 1
 
-#            self._activation.tofile(self._activation_log_file, sep=', ')
-            tmp.tofile(self._activation_log_file, sep=', ')
+            self._activation.tofile(self._activation_log_file, sep=', ')
+#            tmp.tofile(self._activation_log_file, sep=', ')
             self._activation_log_file.write('\n')
 
     def new_input(self):

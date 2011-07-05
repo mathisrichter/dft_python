@@ -145,6 +145,10 @@ class GraspArchitecture():
                                              name="move right arm",
                                              step_fields=True)
 
+        move_right_arm_cos_node = self._move_right_arm.get_cos_node()
+        move_right_arm_cos_node.set_resting_level(-3.0)
+        move_right_arm_cos_node.set_relaxation_time(1.0)
+
         # connect move right arm intention node to its cos field, so that the peak
         # forms in the center of the cos field (cos for the move-right-arm behavior)
         int_node_to_cos_field_projection = DynamicField.Projection(0, move_head_field_dimensionality, set([]), [])
@@ -174,6 +178,10 @@ class GraspArchitecture():
                                              name="move left arm",
                                              step_fields=True)
 
+        move_left_arm_cos_node = self._move_left_arm.get_cos_node()
+        move_left_arm_cos_node.set_resting_level(-3.0)
+        move_left_arm_cos_node.set_relaxation_time(1.0)
+
         # connect move arm intention node to its cos field, so that the peak
         # forms in the center of the cos field (cos for the move-left-arm behavior)
         int_node_to_cos_field_projection = DynamicField.Projection(0, move_head_field_dimensionality, set([]), [])
@@ -189,7 +197,7 @@ class GraspArchitecture():
         self._visual_servoing_field_sizes = self._move_head_field_sizes
 
         # visual servoing right arm intention field and kernel
-        intention_field_kernel = Kernel.GaussKernel(10.0, [3.0] * visual_servoing_field_dimensionality)
+        intention_field_kernel = Kernel.GaussKernel(7.0, [3.0] * visual_servoing_field_dimensionality)
         self._visual_servoing_right_intention_field = DynamicField.DynamicField([[self._visual_servoing_field_sizes[0]],[self._visual_servoing_field_sizes[1]]], [], [intention_field_kernel])
         self._visual_servoing_right_intention_field.set_global_inhibition(60.0)
         self._visual_servoing_right_intention_field.set_relaxation_time(2.0)
@@ -218,7 +226,7 @@ class GraspArchitecture():
         # connect move right arm intention node to its cos field, so that the peak
         # forms in the center of the cos field (cos for the move-right-arm behavior)
         int_node_to_cos_field_projection = DynamicField.Projection(0, move_head_field_dimensionality, set([]), [])
-        weight = math_tools.gauss_2d(self._visual_servoing_field_sizes, amplitude=4.0, sigmas=[4.5, 4.5], shifts=[self._visual_servoing_field_sizes[0]/2., self._visual_servoing_field_sizes[1]/2.])
+        weight = math_tools.gauss_2d(self._visual_servoing_field_sizes, amplitude=4.0, sigmas=[2.0, 2.0], shifts=[self._visual_servoing_field_sizes[0]/2., self._visual_servoing_field_sizes[1]/2. - 3.0])
         int_node_to_cos_field_weight = DynamicField.Weight(weight)
         DynamicField.connect(self._visual_servoing_right.get_intention_node(), self._visual_servoing_cos_field, [int_node_to_cos_field_projection, int_node_to_cos_field_weight])
 
@@ -231,7 +239,7 @@ class GraspArchitecture():
         self._visual_servoing_field_sizes = self._move_head_field_sizes
 
         # visual servoing left arm intention field and kernel
-        intention_field_kernel = Kernel.GaussKernel(10.0, [3.0] * visual_servoing_field_dimensionality)
+        intention_field_kernel = Kernel.GaussKernel(7.0, [3.0] * visual_servoing_field_dimensionality)
         self._visual_servoing_left_intention_field = DynamicField.DynamicField([[self._visual_servoing_field_sizes[0]],[self._visual_servoing_field_sizes[1]]], [], [intention_field_kernel])
         self._visual_servoing_left_intention_field.set_global_inhibition(60.0)
         self._visual_servoing_left_intention_field.set_relaxation_time(2.0)
