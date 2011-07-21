@@ -77,18 +77,16 @@ class GraspArchitecture():
 
         # move head intention field and its kernel
         intention_field_kernel = Kernel.GaussKernel(10.0, [3.0] * move_head_field_dimensionality)
-        self._move_head_intention_field = DynamicField.DynamicField([[self._move_head_field_sizes[0]],[self._move_head_field_sizes[1]]], [], [intention_field_kernel])
+        self._move_head_intention_field = DynamicField.DynamicField([[self._move_head_field_sizes[0]],[self._move_head_field_sizes[1]]], [], [intention_field_kernel], name="move head intention field")
         self._move_head_intention_field.set_global_inhibition(160.0)
         self._move_head_intention_field.set_relaxation_time(2.0)
-        self._move_head_intention_field.set_name("move_head_intention_field")
         self.fields.append(self._move_head_intention_field)
 
         # move_head CoS field and its kernel
         cos_field_kernel = Kernel.GaussKernel(22.0, [3.0] * move_head_field_dimensionality)
-        self._move_head_cos_field = DynamicField.DynamicField([[self._move_head_field_sizes[0]],[self._move_head_field_sizes[1]]], [], [cos_field_kernel])
+        self._move_head_cos_field = DynamicField.DynamicField([[self._move_head_field_sizes[0]],[self._move_head_field_sizes[1]]], [], [cos_field_kernel], name="move head cos field")
         self._move_head_cos_field.set_global_inhibition(140.0)
         self._move_head_cos_field.set_relaxation_time(2.0)
-        self._move_head_cos_field.set_name("move_head_cos_field")
         self.fields.append(self._move_head_cos_field)
 
         # create elementary behavior: move head
@@ -120,20 +118,18 @@ class GraspArchitecture():
 
         # move right arm intention field and its kernel
         intention_field_kernel = Kernel.GaussKernel(5.3, [3.0] * move_arm_field_dimensionality)
-        self._move_right_arm_intention_field = DynamicField.DynamicField([[self._move_arm_field_sizes[0]],[self._move_arm_field_sizes[1]]], [], [intention_field_kernel])
+        self._move_right_arm_intention_field = DynamicField.DynamicField([[self._move_arm_field_sizes[0]],[self._move_arm_field_sizes[1]]], [], [intention_field_kernel], name="move right arm intention field")
         self._move_right_arm_intention_field.set_global_inhibition(60.0)
         self._move_right_arm_intention_field.set_relaxation_time(2.0)
-        self._move_right_arm_intention_field.set_name("move_right_arm_intention_field")
         self.fields.append(self._move_right_arm_intention_field)
 
         # move arm CoS field and its kernel
         move_arm_cos_field_dimensionality = move_head_field_dimensionality
         self._move_arm_cos_field_sizes = self._move_head_field_sizes
         cos_field_kernel = Kernel.GaussKernel(7.5, [3.0] * move_arm_cos_field_dimensionality)
-        self._move_arm_cos_field = DynamicField.DynamicField([[self._move_arm_cos_field_sizes[0]],[self._move_arm_cos_field_sizes[1]]], [], [cos_field_kernel])
+        self._move_arm_cos_field = DynamicField.DynamicField([[self._move_arm_cos_field_sizes[0]],[self._move_arm_cos_field_sizes[1]]], [], [cos_field_kernel], name="move arm cos field")
         self._move_arm_cos_field.set_global_inhibition(20.0)
         self._move_arm_cos_field.set_relaxation_time(2.0)
-        self._move_arm_cos_field.set_name("move_arm_cos_field")
         self.fields.append(self._move_arm_cos_field)
 
         # create elementary behavior: move arm
@@ -163,10 +159,9 @@ class GraspArchitecture():
 
         # move left arm intention field and its kernel
         intention_field_kernel = Kernel.GaussKernel(5.3, [3.0] * move_arm_field_dimensionality)
-        self._move_left_arm_intention_field = DynamicField.DynamicField([[self._move_arm_field_sizes[0]],[self._move_arm_field_sizes[1]]], [], [intention_field_kernel])
+        self._move_left_arm_intention_field = DynamicField.DynamicField([[self._move_arm_field_sizes[0]],[self._move_arm_field_sizes[1]]], [], [intention_field_kernel], name="move left arm intention field")
         self._move_left_arm_intention_field.set_global_inhibition(60.0)
         self._move_left_arm_intention_field.set_relaxation_time(2.0)
-        self._move_left_arm_intention_field.set_name("move_left_arm_intention_field")
         self.fields.append(self._move_left_arm_intention_field)
 
         # create elementary behavior: move left arm
@@ -198,20 +193,18 @@ class GraspArchitecture():
 
         # visual servoing right arm intention field and kernel
         intention_field_kernel = Kernel.GaussKernel(7.0, [3.0] * visual_servoing_field_dimensionality)
-        self._visual_servoing_right_intention_field = DynamicField.DynamicField([[self._visual_servoing_field_sizes[0]],[self._visual_servoing_field_sizes[1]]], [], [intention_field_kernel])
+        self._visual_servoing_right_intention_field = DynamicField.DynamicField([[self._visual_servoing_field_sizes[0]],[self._visual_servoing_field_sizes[1]]], [], [intention_field_kernel], name="visual servoing right intention field")
         self._visual_servoing_right_intention_field.set_global_inhibition(60.0)
         self._visual_servoing_right_intention_field.set_relaxation_time(2.0)
-        self._visual_servoing_right_intention_field.set_name("visual_servoing_right_intention_field")
         self.fields.append(self._visual_servoing_right_intention_field)
 
         # move arm CoS field and its kernel
         visual_servoing_cos_field_dimensionality = move_head_field_dimensionality
         self._visual_servoing_cos_field_sizes = self._move_head_field_sizes
         cos_field_kernel = Kernel.GaussKernel(11.0, [3.0] * visual_servoing_cos_field_dimensionality)
-        self._visual_servoing_cos_field = DynamicField.DynamicField([[self._visual_servoing_cos_field_sizes[0]],[self._visual_servoing_cos_field_sizes[1]]], [], [cos_field_kernel])
+        self._visual_servoing_cos_field = DynamicField.DynamicField([[self._visual_servoing_cos_field_sizes[0]],[self._visual_servoing_cos_field_sizes[1]]], [], [cos_field_kernel], name="visual servoing cos field")
         self._visual_servoing_cos_field.set_global_inhibition(60.0)
         self._visual_servoing_cos_field.set_relaxation_time(2.0)
-        self._visual_servoing_cos_field.set_name("visual_servoing_cos_field")
         self.fields.append(self._visual_servoing_cos_field)
 
         # create elementary behavior: move arm
@@ -240,10 +233,9 @@ class GraspArchitecture():
 
         # visual servoing left arm intention field and kernel
         intention_field_kernel = Kernel.GaussKernel(7.0, [3.0] * visual_servoing_field_dimensionality)
-        self._visual_servoing_left_intention_field = DynamicField.DynamicField([[self._visual_servoing_field_sizes[0]],[self._visual_servoing_field_sizes[1]]], [], [intention_field_kernel])
+        self._visual_servoing_left_intention_field = DynamicField.DynamicField([[self._visual_servoing_field_sizes[0]],[self._visual_servoing_field_sizes[1]]], [], [intention_field_kernel], name="visual servoing left intention field")
         self._visual_servoing_left_intention_field.set_global_inhibition(60.0)
         self._visual_servoing_left_intention_field.set_relaxation_time(2.0)
-        self._visual_servoing_left_intention_field.set_name("visual_servoing_left_intention_field")
         self.fields.append(self._visual_servoing_left_intention_field)
 
         # create elementary behavior: move arm
@@ -273,12 +265,12 @@ class GraspArchitecture():
 
         # gripper left intention field and its kernel
         intention_field_kernel = Kernel.GaussKernel(10.0, [1.0] * gripper_field_dimensionality)
-        self._gripper_left_intention_field = DynamicField.DynamicField([[self._gripper_field_size]], [], [intention_field_kernel])
+        self._gripper_left_intention_field = DynamicField.DynamicField([[self._gripper_field_size]], [], [intention_field_kernel], name="gripper left intention field")
         self._gripper_left_intention_field.set_global_inhibition(50.0)
 
         # gripper CoS field and its kernel
         cos_field_kernel = Kernel.GaussKernel(8.0, [1.0] * gripper_field_dimensionality)
-        self._gripper_left_cos_field = DynamicField.DynamicField([[self._gripper_field_size]], [], [cos_field_kernel])
+        self._gripper_left_cos_field = DynamicField.DynamicField([[self._gripper_field_size]], [], [cos_field_kernel], name="gripper left cos field")
         self._gripper_left_cos_field.set_global_inhibition(60.0)
 
         # connect the gripper left intention and CoS field
@@ -298,8 +290,6 @@ class GraspArchitecture():
                                                   cos_field=self._gripper_left_cos_field,
                                                   int_node_to_int_field_weight=gripper_left_open_int_weight,
                                                   name="gripper left open")
-        self._gripper_left_intention_field.set_name("gripper_left_intention_field")
-        self._gripper_left_cos_field.set_name("gripper_left_cos_field")
 
         self.fields.append(self._gripper_left_intention_field)
         self.fields.append(self._gripper_left_cos_field)
@@ -311,13 +301,14 @@ class GraspArchitecture():
 
         # gripper right intention field and its kernel
         intention_field_kernel = Kernel.GaussKernel(10.0, [1.0] * gripper_field_dimensionality)
-        self._gripper_right_intention_field = DynamicField.DynamicField([[self._gripper_field_size]], [], [intention_field_kernel])
+        self._gripper_right_intention_field = DynamicField.DynamicField([[self._gripper_field_size]], [], [intention_field_kernel], name="gripper right intention field")
         self._gripper_right_intention_field.set_global_inhibition(50.0)
 
         # gripper CoS field and its kernel
         cos_field_kernel = Kernel.GaussKernel(8.0, [1.0] * gripper_field_dimensionality)
-        self._gripper_right_cos_field = DynamicField.DynamicField([[self._gripper_field_size]], [], [cos_field_kernel])
+        self._gripper_right_cos_field = DynamicField.DynamicField([[self._gripper_field_size]], [], [cos_field_kernel], name="gripper right cos field")
         self._gripper_right_cos_field.set_global_inhibition(60.0)
+        self._gripper_right_cos_field.set_name("gripper right cos field")
 
         # connect the gripper right intention and CoS field
         gripper_right_int_field_to_cos_field_weight = DynamicField.Weight(3.0)
@@ -336,8 +327,6 @@ class GraspArchitecture():
                                                   cos_field=self._gripper_right_cos_field,
                                                   int_node_to_int_field_weight=gripper_right_open_int_weight,
                                                   name="gripper right open")
-        self._gripper_right_intention_field.set_name("gripper_right_intention_field")
-        self._gripper_right_cos_field.set_name("gripper_right_cos_field")
 
         self.fields.append(self._gripper_right_intention_field)
         self.fields.append(self._gripper_right_cos_field)
@@ -357,10 +346,9 @@ class GraspArchitecture():
         color_space_kernel = Kernel.GaussKernel(1.7, [1.4] * color_space_field_dimensionality)
 
         self._color_space_field_sizes = [self._move_head_field_sizes[0], self._move_head_field_sizes[1], self._find_color_field_size]
-        self._color_space_field = DynamicField.DynamicField([[self._color_space_field_sizes[0]],[self._color_space_field_sizes[1]],[self._color_space_field_sizes[2]]], [], [color_space_kernel])
+        self._color_space_field = DynamicField.DynamicField([[self._color_space_field_sizes[0]],[self._color_space_field_sizes[1]],[self._color_space_field_sizes[2]]], [], [color_space_kernel], name="color space field obj")
         self._color_space_field.set_global_inhibition(50.0)
         self._color_space_field.set_relaxation_time(2.0)
-        self._color_space_field.set_name("color_space_field")
         self.fields.append(self._color_space_field)
 
         fc_int_to_color_space_projection = DynamicField.Projection(self._find_color.get_intention_field().get_dimensionality(), color_space_field_dimensionality, set([0]), [2])
@@ -381,10 +369,9 @@ class GraspArchitecture():
         color_space_ee_kernel = Kernel.GaussKernel(2.5, [1.4] * color_space_ee_field_dimensionality)
 
         self._color_space_ee_field_sizes = [self._move_head_field_sizes[0], self._move_head_field_sizes[1], self._find_color_ee_field_size]
-        self._color_space_ee_field = DynamicField.DynamicField([[self._color_space_ee_field_sizes[0]],[self._color_space_ee_field_sizes[1]],[self._color_space_ee_field_sizes[2]]], [], [color_space_ee_kernel])
+        self._color_space_ee_field = DynamicField.DynamicField([[self._color_space_ee_field_sizes[0]],[self._color_space_ee_field_sizes[1]],[self._color_space_ee_field_sizes[2]]], [], [color_space_ee_kernel], name="color space field ee")
         self._color_space_ee_field.set_global_inhibition(50.0)
         self._color_space_ee_field.set_relaxation_time(2.0)
-        self._color_space_ee_field.set_name("color_space_ee_field")
         self.fields.append(self._color_space_ee_field)
 
         fc_int_to_color_space_ee_projection = DynamicField.Projection(self._find_color_ee.get_intention_field().get_dimensionality(), color_space_ee_field_dimensionality, set([0]), [2])
@@ -423,10 +410,9 @@ class GraspArchitecture():
         spatial_target_kernel = Kernel.GaussKernel(8.0, [3.0] * spatial_target_field_dimensionality)
 
         self._spatial_target_field_sizes = self._move_head_field_sizes
-        self._spatial_target_field = DynamicField.DynamicField([[self._spatial_target_field_sizes[0]], [self._spatial_target_field_sizes[1]]], [], [spatial_target_kernel])
+        self._spatial_target_field = DynamicField.DynamicField([[self._spatial_target_field_sizes[0]], [self._spatial_target_field_sizes[1]]], [], [spatial_target_kernel], name="spatial target field")
         self._spatial_target_field.set_global_inhibition(50.0)
         self._spatial_target_field.set_relaxation_time(2.0)
-        self._spatial_target_field.set_name("spatial_target_field")
         self.fields.append(self._spatial_target_field)
 
         color_space_to_spatial_target_projection = DynamicField.Projection(color_space_field_dimensionality, spatial_target_field_dimensionality, set([0, 1]), [0, 1])
@@ -558,12 +544,10 @@ class GraspArchitecture():
         # TASK NODE
         ###############################################################################################################
 
-        self._task_node_grasp = DynamicField.DynamicField([], [], None)
-        self._task_node_grasp.set_name("task node grasp")
+        self._task_node_grasp = DynamicField.DynamicField([], [], None, name="task node grasp")
         self._task_node_grasp.set_boost(10)
 
-        self._task_node_point = DynamicField.DynamicField([], [], None)
-        self._task_node_grasp.set_name("task node point")
+        self._task_node_point = DynamicField.DynamicField([], [], None, name="task node point")
         self._task_node_point.set_boost(0)
 
 
@@ -873,11 +857,9 @@ class ElementaryBehavior:
 
         # intention and cos field
         self._intention_field = intention_field
-        self._intention_field.set_name(self._name + " intention field")
         if (log_activation):
             self._intention_field.start_activation_log()
         self._cos_field = cos_field
-        self._cos_field.set_name(self._name + " cos field")
         if (log_activation):
             self._cos_field.start_activation_log()
 
@@ -939,12 +921,14 @@ class ElementaryBehavior:
 
         # intention field and its kernel
         intention_field_kernel = Kernel.GaussKernel(5.0, [3.0] * field_dimensionality)
-        intention_field = DynamicField.DynamicField(field_sizes, field_resolutions, [intention_field_kernel])
+        intention_field_name = name + " intention field"
+        intention_field = DynamicField.DynamicField(field_sizes, field_resolutions, [intention_field_kernel], name=intention_field_name)
         intention_field.set_global_inhibition(100.0)
 
         # CoS field and its kernel
         cos_field_kernel = Kernel.GaussKernel(5.0, [3.0] * field_dimensionality)
-        cos_field = DynamicField.DynamicField(field_sizes, field_resolutions, [cos_field_kernel])
+        cos_field_name = name + " cos field"
+        cos_field = DynamicField.DynamicField(field_sizes, field_resolutions, [cos_field_kernel], name=cos_field_name)
         cos_field.set_global_inhibition(100.0)
 
         # connect intention field to cos field

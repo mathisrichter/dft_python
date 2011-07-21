@@ -46,7 +46,7 @@ class EndEffectorControlRight(DynamicField.Connectable):
     def _step_computation(self):
 
         self._intention_node.step()
-        print("intention node: ", self._intention_node.get_output()[0])
+#        print("intention node: ", self._intention_node.get_output()[0])
 
         # MOVE ARM
         move_arm_field_output = self._move_arm_intention_field.get_output()
@@ -96,8 +96,8 @@ class EndEffectorControlRight(DynamicField.Connectable):
         vis_arm_boost_x = numpy.dot(vis_arm_field_output_x, vis_arm_ramp_x) / -10.0
         vis_arm_boost_y = numpy.dot(vis_arm_field_output_y, vis_arm_ramp_y) /  10.0
 
-        print("boost x: ", str(vis_arm_boost_x))
-        print("boost y: ", str(vis_arm_boost_y))
+#        print("boost x: ", str(vis_arm_boost_x))
+#        print("boost y: ", str(vis_arm_boost_y))
 
 
 
@@ -118,7 +118,7 @@ class EndEffectorControlRight(DynamicField.Connectable):
 
         end_effector_change = [x_dot, y_dot, z_dot, alpha_dot, 0.0, 0.0]
 
-        print("right change: ", end_effector_change)
+#        print("right change: ", end_effector_change)
 
         # move the arm towards the peak
         # (the last parameter is the axis mask and determines, what should be
